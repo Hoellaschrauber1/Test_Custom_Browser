@@ -211,13 +211,24 @@
 
         const homePage = "https://www.google.com/webhp?igu=1"; // Benutze eine eingebettbare Seite als Startseite
 
-        function navigateTo(url) {
-            // Fügt http:// hinzu, wenn es fehlt
-            if (!/^(https?:\/\/)/i.test(url)) {
-                url = 'https://' + url;
+        function navigateTo(input) {
+            let url;
+            // Prüft, ob die Eingabe wie eine URL aussieht (enthält einen Punkt, keine Leerzeichen)
+            // oder eine Localhost-Adresse ist.
+            const isUrl = (input.includes('.') && !input.includes(' ')) || input.startsWith('localhost');
+
+            if (isUrl) {
+                // Wenn es wie eine URL aussieht, aber kein Protokoll hat, füge https:// hinzu
+                if (!/^(https?:\/\/|file:\/\/|data:)/i.test(input)) {
+                    url = 'https://' + input;
+                } else {
+                    url = input;
+                }
+            } else {
+                // Andernfalls wird es als Suchanfrage für Google behandelt.
+                url = `https://www.google.com/search?q=${encodeURIComponent(input)}`;
             }
-            // Um Cross-Origin-Probleme zu vermeiden, verwenden wir einen Proxy für die Anzeige von Inhalten
-            // In einer echten Anwendung wäre dies anders
+            
             console.log(`Navigiere zu: ${url}`);
             iframe.src = url;
             addressBar.value = url;
