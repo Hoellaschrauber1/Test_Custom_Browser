@@ -3,321 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FBrowser</title>
+    <title>Sims 4 Mod Checker</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
     <style>
-        :root {
-            --browser-bg: #2b2b3b;
-            --toolbar-bg: #3c3c4f;
-            --address-bar-bg: #1f1f2a;
-            --address-bar-text: #ffffff;
-            --icon-color: #d0d0d0;
-            --icon-hover-bg: #5a5a72;
-            --tab-bg: #3c3c4f;
-            --tab-active-bg: #5a5a72;
-            --tab-text: #f0f0f0;
-        }
         body {
-            font-family: 'Segoe UI', 'Roboto', sans-serif;
-            margin: 0;
-            background-color: var(--browser-bg);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+            font-family: 'Inter', sans-serif;
         }
-        .browser-frame {
-            border: 1px solid #000;
-            border-radius: 8px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        .drop-zone {
+            border: 2px dashed #4a5568;
+            transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
         }
-        .title-bar {
-            display: flex;
-            align-items: center;
-            background-color: var(--toolbar-bg);
-            padding: 4px;
-            -webkit-app-region: drag;
+        .drop-zone.dragover {
+            background-color: #2d3748;
+            border-color: #63b3ed;
         }
-        .window-controls {
-            display: flex;
-            margin-left: auto;
-            -webkit-app-region: no-drag;
+        .log-entry {
+            border-left: 4px solid;
+            animation: fadeIn 0.5s ease-in-out;
         }
-        .window-control {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            margin: 0 4px;
-            cursor: pointer;
+        .log-info { border-color: #63b3ed; }
+        .log-success { border-color: #48bb78; }
+        .log-warning { border-color: #f6e05e; }
+        .log-error { border-color: #f56565; }
+        .log-explanation { border-color: #a0aec0; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .close { background-color: #ff5f57; }
-        .minimize { background-color: #ffbd2e; }
-        .maximize { background-color: #28c940; }
-
-        .tabs-container {
-            display: flex;
-            background-color: var(--browser-bg);
-            padding: 5px 5px 0 5px;
-        }
-        .tab {
-            display: flex;
-            align-items: center;
-            padding: 8px 16px;
-            background-color: var(--tab-bg);
-            color: var(--tab-text);
-            border-top-left-radius: 6px;
-            border-top-right-radius: 6px;
-            margin-right: 2px;
-            cursor: pointer;
-            font-size: 14px;
-            position: relative;
-        }
-        .tab.active {
-            background-color: var(--tab-active-bg);
-            z-index: 2;
-        }
-        .tab-icon {
-            width: 16px;
-            height: 16px;
-            margin-right: 8px;
-        }
-
-        .toolbar {
-            display: flex;
-            align-items: center;
-            padding: 8px;
-            background-color: var(--toolbar-bg);
-        }
-        .nav-button {
-            background: none;
-            border: none;
-            padding: 6px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 2px;
-            color: var(--icon-color);
-        }
-        .nav-button:hover {
-            background-color: var(--icon-hover-bg);
-        }
-        .nav-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .address-bar-container {
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            background-color: var(--address-bar-bg);
-            border-radius: 20px;
-            padding: 0 12px;
-            margin: 0 8px;
-            height: 36px;
-        }
-        .address-bar {
-            width: 100%;
-            background: none;
-            border: none;
-            outline: none;
-            color: var(--address-bar-text);
-            font-size: 14px;
-        }
-        .content {
-            flex-grow: 1;
-            background-color: #fff;
-        }
-        #browser-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        .fbrowser-icon {
-            width: 20px;
-            height: 20px;
-            margin: 0 8px;
-            background: linear-gradient(135deg, #ff9a00, #ff5722);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 12px;
+        /* Custom checkbox style */
+        .custom-checkbox:checked {
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+            background-color: #4299e1;
+            border-color: #4299e1;
         }
     </style>
 </head>
-<body>
-    <div class="browser-frame">
-        <!-- Titelleiste mit Fenstersteuerelementen -->
-        <div class="title-bar">
-            <div class="fbrowser-icon">F</div>
-            <span class="text-xs text-gray-300">FBrowser</span>
-            <div class="window-controls">
-                <div class="window-control minimize"></div>
-                <div class="window-control maximize"></div>
-                <div class="window-control close"></div>
-            </div>
-        </div>
+<body class="bg-gray-900 text-gray-200 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl bg-gray-800 rounded-2xl shadow-2xl p-8 space-y-6">
         
-        <!-- Tab-Leiste -->
-        <div class="tabs-container">
-            <div id="tab1" class="tab active">
-                <img id="tab1-favicon" class="tab-icon" src="https://placehold.co/16x16/5a5a72/ffffff?text=F">
-                <span id="tab1-title">Neue Registerkarte</span>
+        <!-- Header -->
+        <div class="text-center">
+            <h1 class="text-4xl font-bold text-white">Sims 4 Mod Checker</h1>
+            <p class="text-gray-400 mt-2">Lade deine Mods hoch, um sie zu überprüfen und eine saubere ZIP-Datei zu erstellen.</p>
+        </div>
+
+        <!-- Drop Zone -->
+        <div id="dropZone" class="drop-zone w-full p-10 rounded-lg text-center cursor-pointer bg-gray-700/50">
+            <p class="text-gray-400">Zieh deine `.package` und `.ts4script` Dateien hierher</p>
+            <p class="text-gray-500 text-sm mt-2">oder klicke, um Dateien auszuwählen</p>
+            <input type="file" id="fileInput" multiple class="hidden">
+        </div>
+
+        <!-- Controls -->
+        <div class="flex flex-col sm:flex-row gap-4">
+            <button id="scanButton" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>
+                1. Mods Scannen
+            </button>
+            <button id="zipButton" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>
+                2. Funktionierende Mods als ZIP packen
+            </button>
+             <button id="resetButton" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>
+                Zurücksetzen
+            </button>
+        </div>
+
+        <!-- File List & Log -->
+        <div class="space-y-4">
+            <h2 id="fileListHeader" class="text-2xl font-semibold text-white border-b-2 border-gray-700 pb-2 hidden">Hochgeladene Mods</h2>
+            <div id="fileList" class="space-y-2 max-h-64 overflow-y-auto pr-2"></div>
+
+            <h2 id="logHeader" class="text-2xl font-semibold text-white border-b-2 border-gray-700 pb-2 hidden">Analyse-Protokoll</h2>
+            <div id="log" class="bg-gray-900/70 p-4 rounded-lg font-mono text-sm max-h-80 overflow-y-auto space-y-2">
+                <p class="text-gray-500">Das Protokoll wird hier angezeigt...</p>
             </div>
         </div>
 
-        <!-- Symbolleiste -->
-        <div class="toolbar">
-            <button id="back-btn" class="nav-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            </button>
-            <button id="forward-btn" class="nav-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </button>
-            <button id="refresh-btn" class="nav-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L20.5 10a9 9 0 0 1-14.85 3.36L3.5 15"/></svg>
-            </button>
-            <div class="address-bar-container">
-                <input type="text" id="address-bar" class="address-bar" placeholder="Suchen oder Adresse eingeben">
-            </div>
-            <button id="home-btn" class="nav-button">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </button>
-        </div>
-
-        <!-- Inhaltsbereich -->
-        <div class="content">
-            <iframe id="browser-iframe" src="about:blank" sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation"></iframe>
-        </div>
     </div>
 
+    <footer class="text-center mt-8 text-gray-500 text-sm">
+        <p>Ein Tool, um die Herausforderungen bei der Mod-Analyse zu demonstrieren.</p>
+    </footer>
+
     <script>
-        const addressBar = document.getElementById('address-bar');
-        const iframe = document.getElementById('browser-iframe');
-        const backBtn = document.getElementById('back-btn');
-        const forwardBtn = document.getElementById('forward-btn');
-        const refreshBtn = document.getElementById('refresh-btn');
-        const homeBtn = document.getElementById('home-btn');
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const scanButton = document.getElementById('scanButton');
+        const zipButton = document.getElementById('zipButton');
+        const resetButton = document.getElementById('resetButton');
+        const fileList = document.getElementById('fileList');
+        const log = document.getElementById('log');
+        const fileListHeader = document.getElementById('fileListHeader');
+        const logHeader = document.getElementById('logHeader');
 
-        const tabTitle = document.getElementById('tab1-title');
-        const tabFavicon = document.getElementById('tab1-favicon');
+        let uploadedFiles = [];
 
-        const homePage = "https://www.google.com/webhp?igu=1"; // Benutze eine eingebettbare Seite als Startseite
+        // --- Event Listeners ---
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
 
-        function navigateTo(input) {
-            let url;
-            // Prüft, ob die Eingabe wie eine URL aussieht (enthält einen Punkt, keine Leerzeichen)
-            // oder eine Localhost-Adresse ist.
-            const isUrl = (input.includes('.') && !input.includes(' ')) || input.startsWith('localhost');
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
-            if (isUrl) {
-                // Wenn es wie eine URL aussieht, aber kein Protokoll hat, füge https:// hinzu
-                if (!/^(https?:\/\/|file:\/\/|data:)/i.test(input)) {
-                    url = 'https://' + input;
-                } else {
-                    url = input;
-                }
-            } else {
-                // Andernfalls wird es als Suchanfrage für Google behandelt.
-                url = `https://www.google.com/search?q=${encodeURIComponent(input)}`;
-            }
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+        });
+
+        dropZone.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files), false);
+
+        scanButton.addEventListener('click', scanFiles);
+        zipButton.addEventListener('click', createZip);
+        resetButton.addEventListener('click', resetTool);
+
+        // --- Core Functions ---
+
+        function handleFiles(files) {
+            uploadedFiles = [...files];
+            if (uploadedFiles.length === 0) return;
+
+            fileListHeader.classList.remove('hidden');
+            fileList.innerHTML = '';
+            log.innerHTML = '';
+            logHeader.classList.add('hidden');
             
-            console.log(`Navigiere zu: ${url}`);
-            iframe.src = url;
-            addressBar.value = url;
+            uploadedFiles.forEach((file, index) => {
+                const fileElement = document.createElement('div');
+                fileElement.className = 'bg-gray-700 p-3 rounded-lg flex items-center justify-between';
+                fileElement.innerHTML = `
+                    <div class="flex items-center">
+                        <input type="checkbox" id="mod-${index}" class="custom-checkbox h-5 w-5 rounded bg-gray-800 border-gray-600 focus:ring-0" disabled>
+                        <label for="mod-${index}" class="ml-3 text-gray-300 truncate">${file.name}</label>
+                    </div>
+                    <span class="text-gray-500 text-sm">${(file.size / 1024).toFixed(2)} KB</span>
+                `;
+                fileList.appendChild(fileElement);
+            });
+
+            scanButton.disabled = false;
+            resetButton.disabled = false;
+            zipButton.disabled = true;
+        }
+
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('p');
+            entry.className = `log-entry log-${type} p-2`;
+            entry.textContent = message;
+            if (log.querySelector('.text-gray-500')) {
+                log.innerHTML = '';
+            }
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
         }
         
-        // Initial leere Seite laden
-        iframe.src = 'data:text/html,<body style="background-color:#202124; color:white; font-family: sans-serif; display:flex; flex-direction:column; justify-content:center; align-items:center; height: 100vh;"><h1>Willkommen bei FBrowser</h1><p>Geben Sie eine Adresse in die Leiste oben ein, um loszulegen.</p></body>';
+        async function scanFiles() {
+            log.innerHTML = '';
+            logHeader.classList.remove('hidden');
 
+            addLog('Starte den Scan...', 'info');
+            await new Promise(r => setTimeout(r, 500));
 
-        addressBar.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                navigateTo(addressBar.value);
-            }
-        });
+            for (const [index, file] of uploadedFiles.entries()) {
+                let status = 'warning';
+                let message = `[${file.name}] - Status: Unbekannt. Manuelle Überprüfung empfohlen.`;
 
-        refreshBtn.addEventListener('click', () => {
-             try {
-                iframe.contentWindow.location.reload();
-            } catch (e) {
-                console.warn("Neuladen aufgrund von Cross-Origin-Beschränkungen nicht möglich.", e.message);
-                // Als Fallback die src neu setzen
-                iframe.src = iframe.src;
-            }
-        });
-
-        backBtn.addEventListener('click', () => {
-            try {
-                iframe.contentWindow.history.back();
-            } catch (e) {
-                console.warn("Zurück-Navigation aufgrund von Cross-Origin-Beschränkungen nicht möglich.", e.message);
-            }
-        });
-
-        forwardBtn.addEventListener('click', () => {
-             try {
-                iframe.contentWindow.history.forward();
-            } catch (e) {
-                console.warn("Vorwärts-Navigation aufgrund von Cross-Origin-Beschränkungen nicht möglich.", e.message);
-            }
-        });
-
-        homeBtn.addEventListener('click', () => {
-            navigateTo(homePage);
-        });
-
-        // Aktualisiert die UI, wenn das Iframe geladen wird
-        iframe.addEventListener('load', () => {
-            try {
-                const newUrl = iframe.contentWindow.location.href;
-                 // "about:blank" oder data-URIs nicht in der Adressleiste anzeigen
-                if (!newUrl.startsWith('about:') && !newUrl.startsWith('data:')) {
-                    addressBar.value = newUrl;
+                // Basic checks a browser CAN do
+                if (!file.name.toLowerCase().endsWith('.package') && !file.name.toLowerCase().endsWith('.ts4script')) {
+                    status = 'error';
+                    message = `[${file.name}] - FEHLER: Dies scheint keine Sims 4 Mod-Datei zu sein.`;
+                } else if (file.size === 0) {
+                    status = 'error';
+                    message = `[${file.name}] - FEHLER: Die Datei ist leer (0 KB).`;
                 }
                 
-                // Update Tab Title
-                const newTitle = iframe.contentDocument.title;
-                tabTitle.textContent = newTitle || newUrl.split('/')[2] || "Neue Registerkarte";
+                addLog(message, status);
+                await new Promise(r => setTimeout(r, 100)); // Simulate work
+            }
+            
+            await new Promise(r => setTimeout(r, 500));
+            
+            // The important explanation of WHY a browser can't do more
+            addLog('------------------------------------------------------------', 'explanation');
+            addLog('WICHTIGE ERKLÄRUNG: Warum "Unbekannt"?', 'explanation');
+            addLog('Ein Browser (diese Webseite) kann Mod-Dateien NICHT wirklich auf Kompatibilität prüfen. Dafür gibt es technische Gründe:', 'explanation');
+            addLog('1. KEIN ZUGRIFF AUF SPIELDATEN: Eine Webseite weiß nicht, welche Version von Die Sims 4 du hast. Sie kann nicht prüfen, ob ein Mod mit dem neuesten Patch "kaputt" ist.', 'explanation');
+            addLog('2. KOMPLEXE DATEIEN: .package-Dateien haben eine komplexe Struktur. Ein Browser kann sie nicht lesen oder verstehen, um Konflikte zwischen Mods zu finden.', 'explanation');
+            addLog('3. ECHTE TESTS NÖTIG: Nur spezielle Programme wie "Sims 4 Studio" oder das Testen im Spiel können wirklich sagen, ob ein Mod funktioniert.', 'explanation');
+            addLog('------------------------------------------------------------', 'explanation');
+            
+            addLog('AKTION ERFORDERLICH: Bitte markiere manuell alle Mods, von denen du weißt, dass sie funktionieren. Nur die markierten Mods werden in die ZIP-Datei aufgenommen.', 'success');
+            
+            // Enable checkboxes
+            uploadedFiles.forEach((file, index) => {
+                 document.getElementById(`mod-${index}`).disabled = false;
+            });
 
-                // Update Favicon
-                let favicon = iframe.contentDocument.querySelector("link[rel*='icon']") || iframe.contentDocument.querySelector("link[rel='shortcut icon']");
-                if (favicon) {
-                    tabFavicon.src = new URL(favicon.href, newUrl).href;
-                } else {
-                    tabFavicon.src = `https://www.google.com/s2/favicons?domain=${new URL(newUrl).hostname}`;
+            zipButton.disabled = false;
+        }
+
+        function createZip() {
+            const zip = new JSZip();
+            const checkedMods = [];
+
+            uploadedFiles.forEach((file, index) => {
+                const checkbox = document.getElementById(`mod-${index}`);
+                if (checkbox.checked) {
+                    checkedMods.push(file);
                 }
-            } catch (e) {
-                // Cross-origin Fehler ignorieren
-                console.warn("Konnte auf Iframe-Inhalt nicht zugreifen:", e.message);
-                try {
-                    const urlObj = new URL(iframe.src);
-                    tabTitle.textContent = urlObj.hostname;
-                    tabFavicon.src = `https://www.google.com/s2/favicons?domain=${urlObj.hostname}`;
-                } catch (urlError) {
-                    console.error("Ungültige Iframe-URL:", urlError.message);
-                    tabTitle.textContent = "Fehler beim Laden";
-                }
+            });
+
+            if (checkedMods.length === 0) {
+                addLog('FEHLER: Es wurden keine funktionierenden Mods zum Zippen ausgewählt.', 'error');
+                return;
             }
 
-            // Der Versuch, den Status der Navigationsschaltflächen zu aktualisieren, wurde entfernt,
-            // da er die Cross-Origin-Fehler verursacht hat. Die Schaltflächen sind jetzt immer aktiv,
-            // und die Klick-Handler fangen Fehler selbst ab.
-        });
+            addLog(`Füge ${checkedMods.length} markierte Mod(s) zur ZIP-Datei hinzu...`, 'info');
+            
+            checkedMods.forEach(file => {
+                zip.file(file.name, file);
+            });
+
+            zip.generateAsync({type:"blob"})
+                .then(function(content) {
+                    addLog('ZIP-Datei erfolgreich erstellt. Download startet...', 'success');
+                    saveAs(content, "Funktionierende_Mods.zip");
+                })
+                .catch(err => {
+                    addLog(`Fehler beim Erstellen der ZIP-Datei: ${err.message}`, 'error');
+                });
+        }
         
-        // Fehler beim Laden des Favicons behandeln
-        tabFavicon.onerror = () => {
-            tabFavicon.src = 'https://placehold.co/16x16/5a5a72/ffffff?text=F';
-        };
+        function resetTool() {
+            uploadedFiles = [];
+            fileList.innerHTML = '';
+            log.innerHTML = '<p class="text-gray-500">Das Protokoll wird hier angezeigt...</p>';
+            fileListHeader.classList.add('hidden');
+            logHeader.classList.add('hidden');
+            scanButton.disabled = true;
+            zipButton.disabled = true;
+            resetButton.disabled = true;
+            fileInput.value = ''; // Reset file input
+        }
 
     </script>
+
 </body>
 </html>
-
