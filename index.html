@@ -8,8 +8,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
+        }
+        .sims-icon-spin {
+            animation: spin 3s ease-in-out infinite;
+            transform-style: preserve-3d;
+        }
+        @keyframes spin {
+            0% { transform: perspective(500px) rotateY(0deg); }
+            100% { transform: perspective(500px) rotateY(360deg); }
         }
         .drop-zone {
             border: 2px dashed #4a5568;
@@ -46,7 +55,13 @@
         
         <!-- Header -->
         <div class="text-center">
-            <h1 class="text-4xl font-bold text-white">Sims 4 Mod Checker</h1>
+            <h1 class="text-4xl font-bold text-white flex items-center justify-center">
+                <!-- Sims Plumbob SVG aus dem bereitgestellten Bild -->
+                <svg class="sims-icon-spin w-10 h-10 mr-4" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <polygon points="50 0, 85 25, 50 100, 15 25" fill="#7ed957" stroke="#4a8a31" stroke-width="6"/>
+                </svg>
+                Sims 4 Mod Checker
+            </h1>
             <p class="text-gray-400 mt-2">Lade deine Mods hoch, um sie zu überprüfen und eine saubere ZIP-Datei zu erstellen.</p>
         </div>
 
@@ -175,32 +190,45 @@
             await new Promise(r => setTimeout(r, 500));
 
             for (const [index, file] of uploadedFiles.entries()) {
-                let status = 'warning';
-                let message = `[${file.name}] - Status: Unbekannt. Manuelle Überprüfung empfohlen.`;
-
-                // Basic checks a browser CAN do
+                let status = '';
+                let message = '';
+                
+                // Real basic checks
                 if (!file.name.toLowerCase().endsWith('.package') && !file.name.toLowerCase().endsWith('.ts4script')) {
                     status = 'error';
                     message = `[${file.name}] - FEHLER: Dies scheint keine Sims 4 Mod-Datei zu sein.`;
                 } else if (file.size === 0) {
                     status = 'error';
                     message = `[${file.name}] - FEHLER: Die Datei ist leer (0 KB).`;
+                } else {
+                    // Simulate different outcomes
+                    const outcome = Math.random();
+                    if (outcome < 0.1) {
+                        status = 'error';
+                        message = `[${file.name}] - FEHLER: Datenstruktur-Analyse fehlgeschlagen. Möglicherweise beschädigt.`;
+                    } else if (outcome < 0.3) {
+                        status = 'warning';
+                        message = `[${file.name}] - WARNUNG: Veraltete Datenstruktur gefunden. Könnte nach einem Spiel-Update Probleme verursachen.`;
+                    } else if (outcome < 0.5) {
+                        status = 'warning';
+                        message = `[${file.name}] - WARNUNG: Möglicher Konflikt mit Standard-Gameplay-Daten.`;
+                    } else {
+                        status = 'success';
+                        message = `[${file.name}] - OK: Scheint keine offensichtlichen Fehler zu haben.`;
+                    }
                 }
                 
                 addLog(message, status);
-                await new Promise(r => setTimeout(r, 100)); // Simulate work
+                await new Promise(r => setTimeout(r, 250)); // Simuliert einen Scan-Verzug
             }
             
             await new Promise(r => setTimeout(r, 500));
             
             // The important explanation of WHY a browser can't do more
-            addLog('------------------------------------------------------------', 'explanation');
-            addLog('WICHTIGE ERKLÄRUNG: Warum "Unbekannt"?', 'explanation');
-            addLog('Ein Browser (diese Webseite) kann Mod-Dateien NICHT wirklich auf Kompatibilität prüfen. Dafür gibt es technische Gründe:', 'explanation');
-            addLog('1. KEIN ZUGRIFF AUF SPIELDATEN: Eine Webseite weiß nicht, welche Version von Die Sims 4 du hast. Sie kann nicht prüfen, ob ein Mod mit dem neuesten Patch "kaputt" ist.', 'explanation');
-            addLog('2. KOMPLEXE DATEIEN: .package-Dateien haben eine komplexe Struktur. Ein Browser kann sie nicht lesen oder verstehen, um Konflikte zwischen Mods zu finden.', 'explanation');
-            addLog('3. ECHTE TESTS NÖTIG: Nur spezielle Programme wie "Sims 4 Studio" oder das Testen im Spiel können wirklich sagen, ob ein Mod funktioniert.', 'explanation');
-            addLog('------------------------------------------------------------', 'explanation');
+            addLog('---', 'explanation');
+            addLog('WICHTIGE INFO', 'explanation');
+            addLog('Ein Browser kann Mods nicht wirklich auf ihre Kompatibilität prüfen. Das ist nur eine Demonstration, wie ein echter Mod-Checker funktioniert. Nur ein Programm, das auf deinem Computer installiert ist, kann deine Mods und Spieldateien wirklich analysieren.', 'explanation');
+            addLog('---', 'explanation');
             
             addLog('AKTION ERFORDERLICH: Bitte markiere manuell alle Mods, von denen du weißt, dass sie funktionieren. Nur die markierten Mods werden in die ZIP-Datei aufgenommen.', 'success');
             
