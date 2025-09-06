@@ -29,6 +29,7 @@
     .script{background:linear-gradient(90deg, rgba(59,130,246,0.04), transparent);color:#5dade2}
     .zip{background:linear-gradient(90deg, rgba(155,89,182,0.04), transparent);color:#af7ac5}
     .broken{background:linear-gradient(90deg, rgba(231,76,60,0.04), transparent);color:#e74c3c;animation:blink 1s step-start infinite}
+    .skipped{background:linear-gradient(90deg, rgba(149, 165, 166, 0.04), transparent);color:#95a5a6;}
     @keyframes blink{50%{opacity:0.6}}
     .stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
     .stat{background:#0b1216;padding:8px 10px;border-radius:8px;border:1px solid #1e262a;color:#bfcbd6}
@@ -71,6 +72,7 @@
           <option value="all">Alle anzeigen</option>
           <option value="ok">OK</option>
           <option value="broken">BROKEN</option>
+          <option value="skipped">SKIPPED</option>
       </select>
     </div>
 
@@ -186,6 +188,7 @@
     div.className = 'line ' + (entry.status==='OK'? (entry.type==='CC'?'cc':'ok') : (entry.status==='BROKEN'?'broken':'skipped'));
     div.dataset.path = (entry.relPath||'').toLowerCase();
     div.dataset.status = entry.status;
+    div.dataset.type = entry.type;
 
     const left = document.createElement('div'); left.className='left';
     left.innerHTML = `<strong>${escapeHtml(entry.relPath)}</strong><div class="meta">${entry.type?entry.type+' • ':''}${formatBytes(entry.size)} ${entry.sha1? '• '+entry.sha1.slice(0,12):''} ${entry.reason? '• '+entry.reason : ''}</div>`;
@@ -221,10 +224,19 @@
   function applyLiveFilter(){
     const q = (search.value||'').toLowerCase();
     const status = statusFilter.value;
+    const filterCC_checked = filterCC.checked;
+    const filterScript_checked = filterScript.checked;
+    const filterZip_checked = filterZip.checked;
+
     Array.from(log.children).forEach(div=>{ 
       const pathMatch = (div.dataset.path||'').includes(q);
       const statusMatch = (status === 'all' || div.dataset.status === status.toUpperCase());
-      div.style.display = (pathMatch && statusMatch) ? '' : 'none'; 
+      const typeMatch = (div.dataset.type === 'CC' && filterCC_checked) ||
+                        (div.dataset.type === 'Script' && filterScript_checked) ||
+                        (div.dataset.type === 'ZIP' && filterZip_checked) ||
+                        (div.dataset.type === 'null' && status === 'all'); // Show skipped when no type and status is all
+      
+      div.style.display = (pathMatch && statusMatch && typeMatch) ? '' : 'none'; 
     });
   }
 
@@ -353,6 +365,9 @@
   resetBtn.onclick = ()=>{ fileInput.value=''; report=[]; shaMap={}; log.innerHTML='Das Protokoll wird hier angezeigt...'; topTableBody.innerHTML=''; updateStats(); zipBrokenBtn.disabled = true; };
   search.addEventListener('input', applyLiveFilter);
   statusFilter.addEventListener('change', applyLiveFilter);
+  filterCC.addEventListener('change', applyLiveFilter);
+  filterScript.addEventListener('change', applyLiveFilter);
+  filterZip.addEventListener('change', applyLiveFilter);
   document.querySelector('.dropzone').addEventListener('click', ()=> fileInput.click());
 
   </script>
