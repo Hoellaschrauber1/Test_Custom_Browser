@@ -574,9 +574,14 @@
         try{ zip.file(entry.relPath, entry.buffer); filesAdded++; }catch(e){console.warn('Zip add error', entry.relPath, e);}
       }
       if(filesAdded === 0){ showMessage('Keine Mods für den Download ausgewählt.'); return; }
-      const blob = await zip.generateAsync({type:'blob'});
-      const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = 'CleanMods.zip'; a.click(); URL.revokeObjectURL(u);
-      showMessage(`Download von ${filesAdded} Mods ausgelöst!`);
+      try {
+        const blob = await zip.generateAsync({type:'blob'});
+        const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = 'CleanMods.zip'; a.click(); URL.revokeObjectURL(u);
+        showMessage(`Download von ${filesAdded} Mods ausgelöst!`);
+      } catch(e) {
+        console.error("ZIP-Erstellung fehlgeschlagen:", e);
+        showMessage('Fehler beim Erstellen des ZIPs. Die Datei ist möglicherweise zu groß.');
+      }
     };
 
     zipBrokenBtn.onclick = async () => {
@@ -598,14 +603,19 @@
             }
         }
         if(filesAdded === 0){ showMessage('Keine BROKEN Mods für den Download gefunden.'); return; }
-        const blob = await zip.generateAsync({ type: 'blob' });
-        const u = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = u;
-        a.download = 'BrokenMods.zip';
-        a.click();
-        URL.revokeObjectURL(u);
-        showMessage(`Download von ${filesAdded} fehlerhaften Mods ausgelöst!`);
+        try {
+            const blob = await zip.generateAsync({ type: 'blob' });
+            const u = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = u;
+            a.download = 'BrokenMods.zip';
+            a.click();
+            URL.revokeObjectURL(u);
+            showMessage(`Download von ${filesAdded} fehlerhaften Mods ausgelöst!`);
+        } catch(e) {
+            console.error("ZIP-Erstellung fehlgeschlagen:", e);
+            showMessage('Fehler beim Erstellen des ZIPs. Die Datei ist möglicherweise zu groß.');
+        }
     };
 
     resetBtn.onclick = ()=>{ fileInput.value=''; report=[]; shaMap={}; log.innerHTML='Das Protokoll wird hier angezeigt...'; topTableBody.innerHTML=''; updateStats(); zipBtn.disabled = true; zipBrokenBtn.disabled = true; };
