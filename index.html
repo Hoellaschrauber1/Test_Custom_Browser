@@ -174,12 +174,11 @@
         renderer.setClearColor(0x000000, 0);
 
         const coneGeometry = new THREE.ConeGeometry(0.7, 1.5, 6);
+        // Ersetzen Sie das transparente Material durch ein opakes, glänzendes Material
         const material = new THREE.MeshStandardMaterial({
             color: 0x2ecc71,
             roughness: 0.1,
-            metalness: 0.2,
-            transparent: true,
-            opacity: 0.8
+            metalness: 0,
         });
         
         const topCone = new THREE.Mesh(coneGeometry, material);
@@ -192,20 +191,27 @@
         const plumbob = new THREE.Group();
         plumbob.add(topCone);
         plumbob.add(bottomCone);
-        plumbob.position.z = -12; // Adjusted for a larger scale
-        plumbob.scale.set(2.5, 2.5, 2.5); // Der Kristall ist jetzt größer!
+        plumbob.position.z = -12;
+        plumbob.scale.set(2.5, 2.5, 2.5);
         
         scene.add(plumbob);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        // Lights adjusted to create more sparkling highlights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); 
         scene.add(ambientLight);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(2, 5, 3);
         scene.add(directionalLight);
+        const pointLight1 = new THREE.PointLight(0xffffff, 0.5);
+        pointLight1.position.set(-5, 5, 5);
+        scene.add(pointLight1);
+        const pointLight2 = new THREE.PointLight(0xffffff, 0.5);
+        pointLight2.position.set(5, -5, -5);
+        scene.add(pointLight2);
 
         function animate() {
             requestAnimationFrame(animate);
-            plumbob.rotation.y += 0.01; // Jetzt dreht er sich aufrecht um die Y-Achse
+            plumbob.rotation.y += 0.01;
             renderer.render(scene, camera);
         }
         animate();
