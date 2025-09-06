@@ -121,6 +121,42 @@
         border-radius: 10px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         z-index: 1000;
+        text-align: center;
+    }
+    #compression-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+    }
+    #compression-dialog {
+        background: #161b22;
+        padding: 30px;
+        border-radius: 16px;
+        max-width: 450px;
+        box-shadow: 0 8px 30px rgba(0,0,0,.6);
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    #compression-dialog p {
+        font-size: 16px;
+    }
+    #compression-dialog button {
+        width: 100%;
+    }
+    .progress-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #8b949e;
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -164,6 +200,10 @@
     </div>
 
     <progress id="progress" value="0" max="100" style="display:none"></progress>
+    <div class="progress-info" style="display:none">
+        <span id="zipProgressText"></span>
+        <span id="zipProgressPercent"></span>
+    </div>
 
     <div class="stats" id="stats">
       <div class="stat">Gescannt:<div class="mono" id="statScanned">0</div></div>
@@ -180,6 +220,18 @@
     <table id="topTable"><thead><tr><tr><th>Pfad</th><th class="mono">Größe</th><th class="mono">SHA-1</th></tr></thead><tbody></tbody></table>
 
     <div id="message-box"></div>
+
+    <div id="compression-modal">
+        <div id="compression-dialog">
+            <h3 style="color:#2ecc71;">Download-Optionen</h3>
+            <p>Die Gesamtgröße der ausgewählten Dateien beträgt:</p>
+            <p style="font-size: 20px; font-weight: bold; color: #f39c12;"><span id="originalSize"></span></p>
+            <p>Möchtest du die Dateien komprimieren, um die Größe zu reduzieren und einen Download zu ermöglichen?</p>
+            <button id="compressBtn">Ja, komprimieren</button>
+            <button id="noCompressBtn" class="danger">Nein, unkomprimiert herunterladen</button>
+            <button id="cancelZipBtn" class="secondary">Abbrechen</button>
+        </div>
+    </div>
 
   </div>
 
@@ -260,12 +312,20 @@
     const statusFilter = document.getElementById('statusFilter');
     const topTableBody = document.querySelector('#topTable tbody');
     const messageBox = document.getElementById('message-box');
+    const compressionModal = document.getElementById('compression-modal');
+    const compressBtn = document.getElementById('compressBtn');
+    const noCompressBtn = document.getElementById('noCompressBtn');
+    const cancelZipBtn = document.getElementById('cancelZipBtn');
+    const zipProgressText = document.getElementById('zipProgressText');
+    const zipProgressPercent = document.getElementById('zipProgressPercent');
+
     document.getElementById('workerCount').textContent = WORKER_COUNT;
 
     // --- Laufende Daten ---
     let report = [];
     let shaMap = {};
     let startTime = 0;
+    let filesToZip = [];
 
     // --- Worker-Pool Setup ---
     const WORKER_CODE = `
@@ -560,62 +620,103 @@
       }
       schedule();
     };
-
-    zipBtn.onclick = async ()=>{
-      showMessage('Erstelle ZIP-Datei...', 99999);
-      const zip = new JSZip();
-      let filesAdded = 0;
-      for(const entry of report){
-        if(entry.status !== 'OK') continue;
-        if(entry.type==='CC' && !filterCC.checked) continue;
-        if(entry.type==='Script' && !filterScript.checked) continue;
-        if(entry.type==='ZIP' && !filterZip.checked) continue;
-        if(!entry.buffer){ console.warn(`Skipping file due to missing buffer: ${entry.relPath}`); continue; }
-        try{ zip.file(entry.relPath, entry.buffer); filesAdded++; }catch(e){console.warn('Zip add error', entry.relPath, e);}
-      }
-      if(filesAdded === 0){ showMessage('Keine Mods für den Download ausgewählt.'); return; }
-      try {
-        const blob = await zip.generateAsync({type:'blob'});
-        const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = 'CleanMods.zip'; a.click(); URL.revokeObjectURL(u);
-        showMessage(`Download von ${filesAdded} Mods ausgelöst!`);
-      } catch(e) {
-        console.error("ZIP-Erstellung fehlgeschlagen:", e);
-        showMessage('Fehler beim Erstellen des ZIPs. Die Datei ist möglicherweise zu groß.');
-      }
-    };
-
-    zipBrokenBtn.onclick = async () => {
+    
+    // Allgemeine Funktion für die ZIP-Erstellung
+    async function createAndDownloadZip(files, filename, compression) {
         showMessage('Erstelle ZIP-Datei...', 99999);
         const zip = new JSZip();
-        let filesAdded = 0;
-        const brokenMods = report.filter(r => r.status === 'BROKEN');
-        if (brokenMods.length === 0) {
-            showMessage('Keine BROKEN Mods zum Zippen gefunden.');
-            return;
-        }
-        for (const entry of brokenMods) {
-            if(!entry.buffer){ console.warn(`Skipping broken file due to missing buffer: ${entry.relPath}`); continue; }
+        
+        let totalSize = 0;
+        for (const entry of files) {
+            totalSize += entry.size;
             try {
                 zip.file(entry.relPath, entry.buffer);
-                filesAdded++;
             } catch (e) {
                 console.warn('Zip add error', entry.relPath, e);
             }
         }
-        if(filesAdded === 0){ showMessage('Keine BROKEN Mods für den Download gefunden.'); return; }
+        
+        // Progressbar für die ZIP-Erstellung anzeigen
+        document.querySelector('.progress-info').style.display = 'flex';
+        progress.style.display = 'block';
+        progress.value = 0;
+        zipProgressText.textContent = `Vorbereitung...`;
+        
         try {
-            const blob = await zip.generateAsync({ type: 'blob' });
+            const blob = await zip.generateAsync({
+                type: 'blob',
+                compression: compression ? 'DEFLATE' : 'STORE',
+                compressionOptions: { level: 9 }
+            }, (metadata) => {
+                if (metadata.percent) {
+                    const progressValue = Math.round(metadata.percent);
+                    progress.value = progressValue;
+                    zipProgressPercent.textContent = `${progressValue}%`;
+                    zipProgressText.textContent = `Zippe: ${metadata.currentFile}`;
+                }
+            });
             const u = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = u;
-            a.download = 'BrokenMods.zip';
+            a.download = filename;
             a.click();
             URL.revokeObjectURL(u);
-            showMessage(`Download von ${filesAdded} fehlerhaften Mods ausgelöst!`);
-        } catch(e) {
+            showMessage(`Download von ${files.length} Mods ausgelöst!`);
+        } catch (e) {
             console.error("ZIP-Erstellung fehlgeschlagen:", e);
             showMessage('Fehler beim Erstellen des ZIPs. Die Datei ist möglicherweise zu groß.');
+        } finally {
+            document.querySelector('.progress-info').style.display = 'none';
+            progress.style.display = 'none';
         }
+    }
+
+    // Funktion zum Anzeigen des Komprimierungsdialogs
+    async function promptForZipCompression(target) {
+        filesToZip = [];
+        if (target === 'ok') {
+            filesToZip = report.filter(r => 
+                r.status === 'OK' && r.buffer &&
+                (r.type === 'CC' && filterCC.checked || 
+                 r.type === 'Script' && filterScript.checked || 
+                 r.type === 'ZIP' && filterZip.checked)
+            );
+        } else {
+            filesToZip = report.filter(r => r.status === 'BROKEN' && r.buffer);
+        }
+
+        if (filesToZip.length === 0) {
+            showMessage(`Keine ${target === 'ok' ? '' : 'BROKEN '}Mods für den Download ausgewählt.`);
+            return;
+        }
+
+        showMessage('Berechne Dateigrößen...', 99999);
+        const originalSize = filesToZip.reduce((sum, f) => sum + f.size, 0);
+        document.getElementById('originalSize').textContent = formatBytes(originalSize);
+        
+        compressionModal.style.display = 'flex';
+        showMessage(''); // Verstecke die vorherige Nachricht
+    }
+
+    zipBtn.onclick = () => promptForZipCompression('ok');
+    zipBrokenBtn.onclick = () => promptForZipCompression('broken');
+
+    // Event-Handler für den Komprimierungsdialog
+    compressBtn.onclick = () => {
+        compressionModal.style.display = 'none';
+        const filename = filesToZip.some(f => f.status === 'BROKEN') ? 'BrokenMods.zip' : 'CleanMods.zip';
+        createAndDownloadZip(filesToZip, filename, true);
+    };
+
+    noCompressBtn.onclick = () => {
+        compressionModal.style.display = 'none';
+        const filename = filesToZip.some(f => f.status === 'BROKEN') ? 'BrokenMods.zip' : 'CleanMods.zip';
+        createAndDownloadZip(filesToZip, filename, false);
+    };
+
+    cancelZipBtn.onclick = () => {
+        compressionModal.style.display = 'none';
+        showMessage('Vorgang abgebrochen.');
     };
 
     resetBtn.onclick = ()=>{ fileInput.value=''; report=[]; shaMap={}; log.innerHTML='Das Protokoll wird hier angezeigt...'; topTableBody.innerHTML=''; updateStats(); zipBtn.disabled = true; zipBrokenBtn.disabled = true; };
