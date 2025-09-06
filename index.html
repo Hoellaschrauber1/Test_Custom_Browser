@@ -5,43 +5,59 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Sims 4 Mod Checker — Dark UI</title>
   <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#0d1117;color:#e6edf3;display:flex;justify-content:center;align-items:center;min-height:100vh}
-    .container{background:#161b22;padding:28px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.6);max-width:980px;width:100%;box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#0d1117;color:#e6edf3;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px;}
+    .container{background:#161b22;padding:28px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.6);max-width:980px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:20px;}
     h1{margin:0 0 4px;color:#2ecc71}
     p{margin:0 0 10px;color:#9aa5b1}
     .top{display:flex;gap:12px;align-items:center}
     .plumbob{width:64px;height:96px;animation:spin 4s linear infinite}
     @keyframes spin{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}
-    .dropzone{border:2px dashed #30363d;border-radius:12px;padding:14px;color:#8b949e;cursor:pointer;margin-top:12px;text-align:left}
-    .row{display:flex;gap:10px;margin-top:12px}
-    button{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .dropzone{border:2px dashed #30363d;border-radius:12px;padding:14px;color:#8b949e;cursor:pointer;text-align:left;}
+    .row{display:flex;gap:10px;flex-wrap:wrap;}
+    .button-group{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+    button{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700;}
     .primary{background:#2ecc71;color:#041014}
     .secondary{background:#2b6fda;color:#fff}
     .danger{background:#7f8c8d;color:#fff}
-    .filters{display:flex;gap:10px;align-items:center;margin-top:10px}
-    #progress{width:100%;height:12px;border-radius:8px;margin-top:12px}
-    #log{background:#0b0f13;border:1px solid #22272b;border-radius:10px;padding:12px;margin-top:12px;color:#c1ccd6;max-height:320px;overflow:auto}
-    .line{padding:8px;border-radius:8px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
-    .left{flex:1}
-    .meta{font-size:12px;color:#93a3af}
+    .filters-row{display:flex;flex-wrap:wrap;gap:20px;align-items:center;}
+    .filter-group{display:flex;gap:10px;flex-wrap:wrap;}
+    .search-input{flex:1;min-width:150px;padding:8px;border-radius:8px;background:#0b1220;border:1px solid #29323a;color:#e6edf3;}
+    #progress{width:100%;height:12px;border-radius:8px;}
+    #log{background:#0b0f13;border:1px solid #22272b;border-radius:10px;padding:12px;color:#c1ccd6;max-height:320px;overflow:auto;}
+    .line{padding:8px;border-radius:8px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px;}
+    .left{flex:1;word-break:break-word;}
+    .meta{font-size:12px;color:#93a3af;}
     .ok{background:linear-gradient(90deg, rgba(46,204,113,0.06), transparent);color:#2ecc71}
     .cc{background:linear-gradient(90deg, rgba(26,188,156,0.06), transparent);color:#1abc9c}
     .script{background:linear-gradient(90deg, rgba(59,130,246,0.04), transparent);color:#5dade2}
     .zip{background:linear-gradient(90deg, rgba(155,89,182,0.04), transparent);color:#af7ac5}
-    .broken{background:linear-gradient(90deg, rgba(231,76,60,0.04), transparent);color:#e74c3c;animation:blink 1s step-start infinite}
+    .broken{background:linear-gradient(90deg, rgba(231,76,60,0.04), transparent);color:#e74c3c;animation:blink 1s step-start infinite;}
     .skipped{background:linear-gradient(90deg, rgba(149, 165, 166, 0.04), transparent);color:#95a5a6;}
     @keyframes blink{50%{opacity:0.6}}
-    .stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-    .stat{background:#0b1216;padding:8px 10px;border-radius:8px;border:1px solid #1e262a;color:#bfcbd6}
-    table{width:100%;border-collapse:collapse;margin-top:10px}
-    th,td{padding:6px 8px;border-bottom:1px solid #1b2327;font-size:13px;color:#c7d6df}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,monospace}
+    .stats{display:flex;gap:8px;flex-wrap:wrap;}
+    .stat{background:#0b1216;padding:8px 10px;border-radius:8px;border:1px solid #1e262a;color:#bfcbd6;}
+    table{width:100%;border-collapse:collapse;}
+    th,td{padding:6px 8px;border-bottom:1px solid #1b2327;font-size:13px;color:#c7d6df;}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,monospace;}
     select {
         padding: 8px;
         border-radius: 8px;
         background: #0b1220;
         border: 1px solid #29323a;
         color: #e6edf3;
+    }
+    #message-box {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #22272b;
+        color: #e6edf3;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        z-index: 1000;
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -59,15 +75,15 @@
     <label class="dropzone" for="fileInput">Zieh deinen Mods-Ordner hierher (inkl. Unterordner) oder klicke, um auszuwählen</label>
     <input id="fileInput" type="file" webkitdirectory directory multiple style="display:none" />
 
-    <div class="row">
+    <div class="button-group">
       <button id="scanBtn" class="primary">1. Mods Scannen (Worker)</button>
       <button id="zipBtn" class="secondary" disabled>2. Ausgewählte Typen als ZIP packen</button>
       <button id="zipBrokenBtn" class="secondary" disabled>3. BROKEN als ZIP packen</button>
       <button id="resetBtn" class="danger">Zurücksetzen</button>
     </div>
     
-    <div class="row" style="margin-top: 10px; align-items: center;">
-      <input id="search" placeholder="Live-Suche" style="padding:8px;border-radius:8px;background:#0b1220;border:1px solid #29323a;color:#e6edf3; flex: 1;" />
+    <div class="filters-row">
+      <input id="search" class="search-input" placeholder="Live-Suche" />
       <select id="statusFilter">
           <option value="all">Alle anzeigen</option>
           <option value="ok">OK</option>
@@ -96,8 +112,10 @@
 
     <div id="log">Das Protokoll wird hier angezeigt...</div>
 
-    <h3 style="color:#bfe1c9;margin-top:12px">Top 10 größte Mods</h3>
+    <h3 style="color:#bfe1c9;">Top 10 größte Mods</h3>
     <table id="topTable"><thead><tr><th>Pfad</th><th class="mono">Größe</th><th class="mono">SHA-1</th></tr></thead><tbody></tbody></table>
+
+    <div id="message-box"></div>
 
   </div>
 
@@ -127,6 +145,7 @@
   const search = document.getElementById('search');
   const statusFilter = document.getElementById('statusFilter');
   const topTableBody = document.querySelector('#topTable tbody');
+  const messageBox = document.getElementById('message-box');
   document.getElementById('workerCount').textContent = WORKER_COUNT;
 
   // --- Laufende Daten ---
@@ -183,6 +202,14 @@
   function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function formatBytes(n){ if(n==null) return '—'; if(n<1024) return n+' B'; if(n<1024*1024) return (n/1024).toFixed(1)+' KB'; return (n/1024/1024).toFixed(2)+' MB'; }
 
+  function showMessage(message, duration = 3000) {
+    messageBox.textContent = message;
+    messageBox.style.display = 'block';
+    setTimeout(() => {
+        messageBox.style.display = 'none';
+    }, duration);
+  }
+
   function appendLog(entry){
     const div = document.createElement('div');
     div.className = 'line ' + (entry.status==='OK'? (entry.type==='CC'?'cc':'ok') : (entry.status==='BROKEN'?'broken':'skipped'));
@@ -222,29 +249,32 @@
   }
 
   function applyLiveFilter(){
-    const q = (search.value||'').toLowerCase();
+    const q = (search.value || '').toLowerCase();
     const status = statusFilter.value;
     const filterCC_checked = filterCC.checked;
     const filterScript_checked = filterScript.checked;
     const filterZip_checked = filterZip.checked;
 
-    Array.from(log.children).forEach(div=>{ 
-      const pathMatch = (div.dataset.path||'').includes(q);
+    Array.from(log.children).forEach(div => {
+      const pathMatch = (div.dataset.path || '').includes(q);
       const statusMatch = (status === 'all' || div.dataset.status === status.toUpperCase());
-      const typeMatch = (div.dataset.type === 'CC' && filterCC_checked) ||
-                        (div.dataset.type === 'Script' && filterScript_checked) ||
-                        (div.dataset.type === 'ZIP' && filterZip_checked) ||
-                        (div.dataset.type === 'null' && status === 'all'); // Show skipped when no type and status is all
-      
-      div.style.display = (pathMatch && statusMatch && typeMatch) ? '' : 'none'; 
+
+      let typeMatch = true;
+      if (div.dataset.status === 'OK') {
+        typeMatch = (div.dataset.type === 'CC' && filterCC_checked) ||
+                    (div.dataset.type === 'Script' && filterScript_checked) ||
+                    (div.dataset.type === 'ZIP' && filterZip_checked);
+      }
+
+      div.style.display = (pathMatch && statusMatch && typeMatch) ? '' : 'none';
     });
   }
 
   // --- Scan using worker pool ---
   scanBtn.onclick = async ()=>{
     const files = Array.from(fileInput.files || []);
-    if(files.length===0){ alert('Bitte Dateien/Ordner wählen!'); return; }
-    if(files.length>MAX_FILES){ alert('Max '+MAX_FILES+' Dateien erlaubt.'); return; }
+    if(files.length===0){ showMessage('Bitte Dateien/Ordner wählen!'); return; }
+    if(files.length>MAX_FILES){ showMessage('Max '+MAX_FILES+' Dateien erlaubt.'); return; }
 
     // reset
     report = []; shaMap = {}; log.innerHTML='Das Protokoll wird hier angezeigt...'; progress.style.display='block'; progress.value=0; startTime = Date.now(); updateStats(); refreshTopList();
@@ -328,31 +358,40 @@
   // ZIP creation preserves structure and honors filters
   zipBtn.onclick = async ()=>{
     const zip = new JSZip();
+    let filesAdded = 0;
     for(const entry of report){
       if(entry.status !== 'OK') continue;
       if(entry.type==='CC' && !filterCC.checked) continue;
       if(entry.type==='Script' && !filterScript.checked) continue;
       if(entry.type==='ZIP' && !filterZip.checked) continue;
-      try{ const buf = await entry.fileObj.arrayBuffer(); zip.file(entry.relPath, buf); }catch(e){console.warn('Zip add error', entry.relPath, e);}    }
+      if(!entry.fileObj){ console.warn(`Skipping file due to missing fileObj: ${entry.relPath}`); continue; }
+      try{ const buf = await entry.fileObj.arrayBuffer(); zip.file(entry.relPath, buf); filesAdded++; }catch(e){console.warn('Zip add error', entry.relPath, e);}
+    }
+    if(filesAdded === 0){ showMessage('Keine Mods für den Download ausgewählt.'); return; }
     const blob = await zip.generateAsync({type:'blob'});
     const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = 'CleanMods.zip'; a.click(); URL.revokeObjectURL(u);
+    showMessage(`Download von ${filesAdded} Mods ausgelöst!`);
   };
-  
+
   zipBrokenBtn.onclick = async () => {
       const zip = new JSZip();
+      let filesAdded = 0;
       const brokenMods = report.filter(r => r.status === 'BROKEN');
       if (brokenMods.length === 0) {
-          alert('Keine BROKEN Mods zum Zippen gefunden.');
+          showMessage('Keine BROKEN Mods zum Zippen gefunden.');
           return;
       }
       for (const entry of brokenMods) {
+          if(!entry.fileObj){ console.warn(`Skipping broken file due to missing fileObj: ${entry.relPath}`); continue; }
           try {
               const buf = await entry.fileObj.arrayBuffer();
               zip.file(entry.relPath, buf);
+              filesAdded++;
           } catch (e) {
               console.warn('Zip add error', entry.relPath, e);
           }
       }
+      if(filesAdded === 0){ showMessage('Keine BROKEN Mods für den Download gefunden.'); return; }
       const blob = await zip.generateAsync({ type: 'blob' });
       const u = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -360,6 +399,7 @@
       a.download = 'BrokenMods.zip';
       a.click();
       URL.revokeObjectURL(u);
+      showMessage(`Download von ${filesAdded} fehlerhaften Mods ausgelöst!`);
   };
 
   resetBtn.onclick = ()=>{ fileInput.value=''; report=[]; shaMap={}; log.innerHTML='Das Protokoll wird hier angezeigt...'; topTableBody.innerHTML=''; updateStats(); zipBrokenBtn.disabled = true; };
