@@ -226,9 +226,13 @@
             <h3 style="color:#2ecc71;">Download-Optionen</h3>
             <p>Die Gesamtgröße der ausgewählten Dateien beträgt:</p>
             <p style="font-size: 20px; font-weight: bold; color: #f39c12;"><span id="originalSize"></span></p>
-            <p>Möchtest du die Dateien komprimieren, um die Größe zu reduzieren und einen Download zu ermöglichen?</p>
-            <button id="compressBtn">Ja, komprimieren</button>
-            <button id="noCompressBtn" class="danger">Nein, unkomprimiert herunterladen</button>
+            <p>Bitte wähle die gewünschte Komprimierungsstufe:</p>
+            <select id="compressionLevel">
+                <option value="0">Keine Komprimierung</option>
+                <option value="6" selected>Standard (empfohlen)</option>
+                <option value="9">Maximum</option>
+            </select>
+            <button id="startZipBtn">Download starten</button>
             <button id="cancelZipBtn" class="secondary">Abbrechen</button>
         </div>
     </div>
@@ -313,9 +317,9 @@
     const topTableBody = document.querySelector('#topTable tbody');
     const messageBox = document.getElementById('message-box');
     const compressionModal = document.getElementById('compression-modal');
-    const compressBtn = document.getElementById('compressBtn');
-    const noCompressBtn = document.getElementById('noCompressBtn');
+    const startZipBtn = document.getElementById('startZipBtn');
     const cancelZipBtn = document.getElementById('cancelZipBtn');
+    const compressionLevelSelect = document.getElementById('compressionLevel');
     const zipProgressText = document.getElementById('zipProgressText');
     const zipProgressPercent = document.getElementById('zipProgressPercent');
 
@@ -622,13 +626,11 @@
     };
     
     // Allgemeine Funktion für die ZIP-Erstellung
-    async function createAndDownloadZip(files, filename, compression) {
+    async function createAndDownloadZip(files, filename, compressionLevel) {
         showMessage('Erstelle ZIP-Datei...', 99999);
         const zip = new JSZip();
         
-        let totalSize = 0;
         for (const entry of files) {
-            totalSize += entry.size;
             try {
                 zip.file(entry.relPath, entry.buffer);
             } catch (e) {
@@ -645,8 +647,8 @@
         try {
             const blob = await zip.generateAsync({
                 type: 'blob',
-                compression: compression ? 'DEFLATE' : 'STORE',
-                compressionOptions: { level: 9 }
+                compression: compressionLevel === 0 ? 'STORE' : 'DEFLATE',
+                compressionOptions: { level: compressionLevel }
             }, (metadata) => {
                 if (metadata.percent) {
                     const progressValue = Math.round(metadata.percent);
@@ -690,7 +692,6 @@
             return;
         }
 
-        showMessage('Berechne Dateigrößen...', 99999);
         const originalSize = filesToZip.reduce((sum, f) => sum + f.size, 0);
         document.getElementById('originalSize').textContent = formatBytes(originalSize);
         
@@ -702,16 +703,11 @@
     zipBrokenBtn.onclick = () => promptForZipCompression('broken');
 
     // Event-Handler für den Komprimierungsdialog
-    compressBtn.onclick = () => {
+    startZipBtn.onclick = () => {
+        const compressionLevel = parseInt(compressionLevelSelect.value, 10);
         compressionModal.style.display = 'none';
         const filename = filesToZip.some(f => f.status === 'BROKEN') ? 'BrokenMods.zip' : 'CleanMods.zip';
-        createAndDownloadZip(filesToZip, filename, true);
-    };
-
-    noCompressBtn.onclick = () => {
-        compressionModal.style.display = 'none';
-        const filename = filesToZip.some(f => f.status === 'BROKEN') ? 'BrokenMods.zip' : 'CleanMods.zip';
-        createAndDownloadZip(filesToZip, filename, false);
+        createAndDownloadZip(filesToZip, filename, compressionLevel);
     };
 
     cancelZipBtn.onclick = () => {
