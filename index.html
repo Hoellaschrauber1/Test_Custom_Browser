@@ -3,331 +3,306 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sims 4 Mod Checker — Dark UI</title>
+  <title>Sims 4 Mod Checker — Dark UI (Worker-Version)</title>
   <style>
-    body {font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background: #0d1117; color: #e6edf3; display: flex; justify-content: center; align-items: center; min-height: 100vh;}
-    .container {background: #161b22; padding: 28px 20px; border-radius: 16px; box-shadow: 0 6px 30px rgba(0,0,0,0.6); max-width: 980px; width: 100%; text-align: center; box-sizing: border-box;}
-    h1 {font-size: 28px; margin: 0; color: #2ecc71;}
-    p {margin: 6px 0 14px; color: #9aa5b1;}
-
-    .plumbob {width: 64px; height: 96px; animation: spin 4s linear infinite; margin: 0 auto 12px; display: block;}
-    @keyframes spin {from{transform:rotateY(0deg);} to{transform:rotateY(360deg);}}
-
-    .top-row {display:flex;gap:12px;align-items:center;justify-content:space-between}
-    .dropzone {flex:1;border: 2px dashed #30363d; border-radius: 12px; padding: 18px 16px; margin: 16px 0; color: #8b949e; cursor: pointer; display:block;text-align:left}
-    .dropzone:hover {border-color: #2ecc71; color: #c8f7d0}
-
-    .row {display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
-    button{padding:10px 14px;border-radius:10px;border:none;font-weight:700;cursor:pointer}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#0d1117;color:#e6edf3;display:flex;justify-content:center;align-items:center;min-height:100vh}
+    .container{background:#161b22;padding:28px;border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.6);max-width:980px;width:100%;box-sizing:border-box}
+    h1{margin:0 0 4px;color:#2ecc71}
+    p{margin:0 0 10px;color:#9aa5b1}
+    .top{display:flex;gap:12px;align-items:center}
+    .plumbob{width:64px;height:96px;animation:spin 4s linear infinite}
+    @keyframes spin{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}
+    .dropzone{border:2px dashed #30363d;border-radius:12px;padding:14px;color:#8b949e;cursor:pointer;margin-top:12px;text-align:left}
+    .row{display:flex;gap:10px;margin-top:12px}
+    button{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
     .primary{background:#2ecc71;color:#041014}
     .secondary{background:#2b6fda;color:#fff}
     .danger{background:#7f8c8d;color:#fff}
-    button:disabled{opacity:0.5;cursor:not-allowed}
-
-    .filters{display:flex;gap:12px;align-items:center;justify-content:flex-start;margin-top:10px}
-    .filters label{font-size:13px;color:#b9c6cf}
-
-    #controls {display:flex;gap:12px;align-items:center}
-    #search{background:#0b1220;border:1px solid #29323a;padding:8px;border-radius:8px;color:#e6edf3}
-
-    #progressWrap{margin-top:12px}
-    progress{width:100%;height:14px;border-radius:7px}
-    progress::-webkit-progress-bar{background:#22272b}
-    progress::-webkit-progress-value{background:#2ecc71}
-
-    #log{background:#0b0f13;border:1px solid #22272b;border-radius:10px;padding:12px;margin-top:14px;color:#c1ccd6;max-height:320px;overflow:auto;text-align:left}
-    #log .line{padding:6px 8px;border-radius:6px;margin-bottom:6px;display:flex;justify-content:space-between;gap:10px;align-items:center}
-    #log .left{flex:1}
-    #log .meta{font-size:12px;color:#93a3af}
-    #log .ok{background:linear-gradient(90deg, rgba(46,204,113,0.06), transparent);color:#2ecc71}
-    #log .cc{background:linear-gradient(90deg, rgba(26,188,156,0.06), transparent);color:#1abc9c}
-    #log .script{background:linear-gradient(90deg, rgba(59,130,246,0.04), transparent);color:#5dade2}
-    #log .zip{background:linear-gradient(90deg, rgba(155,89,182,0.04), transparent);color:#af7ac5}
-    #log .broken{background:linear-gradient(90deg, rgba(231,76,60,0.04), transparent);color:#e74c3c;animation:blink 1s step-start infinite}
-    #log .skipped{background:linear-gradient(90deg, rgba(189,195,199,0.02), transparent);color:#95a5a6}
+    .filters{display:flex;gap:10px;align-items:center;margin-top:10px}
+    #progress{width:100%;height:12px;border-radius:8px;margin-top:12px}
+    #log{background:#0b0f13;border:1px solid #22272b;border-radius:10px;padding:12px;margin-top:12px;color:#c1ccd6;max-height:320px;overflow:auto}
+    .line{padding:8px;border-radius:8px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+    .left{flex:1}
+    .meta{font-size:12px;color:#93a3af}
+    .ok{background:linear-gradient(90deg, rgba(46,204,113,0.06), transparent);color:#2ecc71}
+    .cc{background:linear-gradient(90deg, rgba(26,188,156,0.06), transparent);color:#1abc9c}
+    .script{background:linear-gradient(90deg, rgba(59,130,246,0.04), transparent);color:#5dade2}
+    .zip{background:linear-gradient(90deg, rgba(155,89,182,0.04), transparent);color:#af7ac5}
+    .broken{background:linear-gradient(90deg, rgba(231,76,60,0.04), transparent);color:#e74c3c;animation:blink 1s step-start infinite}
     @keyframes blink{50%{opacity:0.6}}
-
-    .stats{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:12px}
-    .stat{background:#0b1216;padding:10px 12px;border-radius:10px;border:1px solid #1e262a;color:#bfcbd6}
-    .big{font-weight:800;color:#fff}
-
-    table{width:100%;border-collapse:collapse;margin-top:12px}
+    .stats{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .stat{background:#0b1216;padding:8px 10px;border-radius:8px;border:1px solid #1e262a;color:#bfcbd6}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
     th,td{padding:6px 8px;border-bottom:1px solid #1b2327;font-size:13px;color:#c7d6df}
-    .small{font-size:12px;color:#8fa3af}
-
-    .toplist{margin-top:12px;text-align:left}
-    .muted{color:#859aa6}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,monospace}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
   <div class="container">
-    <div style="display:flex;align-items:center;gap:12px;justify-content:center">
-      <svg class="plumbob" viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
-        <polygon points="50,0 0,75 50,150 100,75" fill="#2ecc71" stroke="#145a32" stroke-width="2"/>
-      </svg>
-      <div style="text-align:left">
-        <h1 style="margin-bottom:4px">Sims 4 Mod Checker</h1>
-        <p style="margin:0">Scan, prüfe Integrität, finde Duplikate und erstelle eine saubere ZIP (Ordnerstruktur bleibt erhalten).</p>
+    <div class="top">
+      <svg class="plumbob" viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg"><polygon points="50,0 0,75 50,150 100,75" fill="#2ecc71" stroke="#145a32" stroke-width="2"/></svg>
+      <div>
+        <h1>Sims 4 Mod Checker</h1>
+        <p>Multi-Threaded Scan (Web Workers) — schnellere Verarbeitung großer Mods-Sammlungen</p>
       </div>
     </div>
 
-    <label class="dropzone" for="fileInput">Zieh deinen <strong>Mods-Ordner</strong> hierher (inkl. Unterordner) oder klicke, um auszuwählen</label>
+    <label class="dropzone" for="fileInput">Zieh deinen Mods-Ordner hierher (inkl. Unterordner) oder klicke, um auszuwählen</label>
     <input id="fileInput" type="file" webkitdirectory directory multiple style="display:none" />
 
     <div class="row">
-      <button id="scanBtn" class="primary">1. Mods Scannen</button>
+      <button id="scanBtn" class="primary">1. Mods Scannen (Worker)</button>
       <button id="zipBtn" class="secondary" disabled>2. Ausgewählte Typen als ZIP packen</button>
       <button id="resetBtn" class="danger">Zurücksetzen</button>
-      <div style="flex-basis:12px"></div>
-      <div id="controls" style="margin-left:auto">
-        <input id="search" placeholder="Live-Suche (Dateiname)" />
-      </div>
+      <input id="search" placeholder="Live-Suche" style="margin-left:12px;padding:8px;border-radius:8px;background:#0b1220;border:1px solid #29323a;color:#e6edf3" />
     </div>
 
     <div class="filters">
       <label><input type="checkbox" id="filterCC" checked> CC (.package)</label>
       <label><input type="checkbox" id="filterScript" checked> Scripts (.ts4script)</label>
       <label><input type="checkbox" id="filterZip" checked> ZIP-Dateien</label>
-      <label style="margin-left:auto" class="muted">Max Dateien: 4000</label>
+      <div style="margin-left:auto;color:#95a5a6">Workers: <span id="workerCount"></span></div>
     </div>
 
-    <div id="progressWrap"><progress id="progress" value="0" max="100" style="display:none"></progress></div>
+    <progress id="progress" value="0" max="100" style="display:none"></progress>
 
     <div class="stats" id="stats">
-      <div class="stat">Gescannt:<div class="big" id="statScanned">0</div></div>
-      <div class="stat">OK:<div class="big" id="statOK">0</div></div>
-      <div class="stat">BROKEN:<div class="big" id="statBroken">0</div></div>
-      <div class="stat">SKIPPED:<div class="big" id="statSkipped">0</div></div>
-      <div class="stat">Duplikate:<div class="big" id="statDup">0</div></div>
-      <div class="stat">Dauer:<div class="big" id="statTime">0s</div></div>
+      <div class="stat">Gescannt:<div class="mono" id="statScanned">0</div></div>
+      <div class="stat">OK:<div class="mono" id="statOK">0</div></div>
+      <div class="stat">BROKEN:<div class="mono" id="statBroken">0</div></div>
+      <div class="stat">SKIPPED:<div class="mono" id="statSkipped">0</div></div>
+      <div class="stat">Duplikate:<div class="mono" id="statDup">0</div></div>
+      <div class="stat">Dauer:<div class="mono" id="statTime">0s</div></div>
     </div>
 
     <div id="log">Das Protokoll wird hier angezeigt...</div>
 
-    <div class="toplist" id="toplist">
-      <h3 style="margin:8px 0 6px;color:#bfe1c9">Top 10 größte Mods</h3>
-      <table id="topTable"><thead><tr><th>Pfad</th><th class="small">Größe</th><th class="small">Hash (SHA-1)</th></tr></thead><tbody></tbody></table>
-    </div>
+    <h3 style="color:#bfe1c9;margin-top:12px">Top 10 größte Mods</h3>
+    <table id="topTable"><thead><tr><th>Pfad</th><th class="mono">Größe</th><th class="mono">SHA-1</th></tr></thead><tbody></tbody></table>
 
   </div>
 
   <script>
-    // Einstellungen
-    const SUPPORTED=['.package','.ts4script','.zip'];
-    const MAX_FILES = 4000;
+  // --- Konfiguration ---
+  const SUPPORTED = ['.package', '.ts4script', '.zip'];
+  const MAX_FILES = 4000;
+  const WORKER_COUNT = Math.max(1, (navigator.hardwareConcurrency || 4) - 1); // leave one core free
 
-    // UI Elemente
-    const fileInput = document.getElementById('fileInput');
-    const scanBtn = document.getElementById('scanBtn');
-    const zipBtn = document.getElementById('zipBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const log = document.getElementById('log');
-    const progress = document.getElementById('progress');
-    const statScanned = document.getElementById('statScanned');
-    const statOK = document.getElementById('statOK');
-    const statBroken = document.getElementById('statBroken');
-    const statSkipped = document.getElementById('statSkipped');
-    const statDup = document.getElementById('statDup');
-    const statTime = document.getElementById('statTime');
-    const filterCC = document.getElementById('filterCC');
-    const filterScript = document.getElementById('filterScript');
-    const filterZip = document.getElementById('filterZip');
-    const search = document.getElementById('search');
-    const topTableBody = document.querySelector('#topTable tbody');
+  // --- UI Referenzen ---
+  const fileInput = document.getElementById('fileInput');
+  const scanBtn = document.getElementById('scanBtn');
+  const zipBtn = document.getElementById('zipBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const log = document.getElementById('log');
+  const progress = document.getElementById('progress');
+  const statScanned = document.getElementById('statScanned');
+  const statOK = document.getElementById('statOK');
+  const statBroken = document.getElementById('statBroken');
+  const statSkipped = document.getElementById('statSkipped');
+  const statDup = document.getElementById('statDup');
+  const statTime = document.getElementById('statTime');
+  const filterCC = document.getElementById('filterCC');
+  const filterScript = document.getElementById('filterScript');
+  const filterZip = document.getElementById('filterZip');
+  const search = document.getElementById('search');
+  const topTableBody = document.querySelector('#topTable tbody');
+  document.getElementById('workerCount').textContent = WORKER_COUNT;
 
-    // Laufende Daten
-    let report = []; // {file, relPath, status, reason?, type?, size, sha1, fileObj}
-    let shaMap = {}; // sha1 -> [entries]
-    let startTime = 0;
+  // --- Laufende Daten ---
+  let report = []; // Einträge: {relPath, status, reason, type, size, sha1, fileObj}
+  let shaMap = {}; // sha1 -> [entries]
+  let startTime = 0;
 
-    // Utility: read first bytes
-    function readFirstBytes(file, len=4){
-      return new Promise((res, rej)=>{
-        const r = new FileReader();
-        r.onload = ()=> res(new Uint8Array(r.result));
-        r.onerror = ()=> rej(r.error);
-        r.readAsArrayBuffer(file.slice(0, len));
-      });
+  // --- Worker-Pool Setup ---
+  const WORKER_CODE = `
+    self.importScripts('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
+    async function readFirstBytes(file, len=4){
+      try{ const buf = await file.slice(0,len).arrayBuffer(); return new Uint8Array(buf); }catch(e){ return null; }
     }
-
-    // Compute SHA-1 using SubtleCrypto
-    async function computeSHA1(file){
+    async function computeSHA1(file){ try{ const buf = await file.arrayBuffer(); const hash = await crypto.subtle.digest('SHA-1', buf); return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join(''); }catch(e){ return null; } }
+    async function testZip(file){ try{ const buf = await file.arrayBuffer(); await JSZip.loadAsync(buf); return true; }catch(e){ return false; } }
+    self.onmessage = async (ev) => {
+      const {id, relPath, file} = ev.data;
       try{
-        const buf = await file.arrayBuffer();
-        const hash = await crypto.subtle.digest('SHA-1', buf);
-        return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
-      }catch(e){return null}
-    }
-
-    // Classify + get SHA-1
-    async function classify(file){
-      if(file.size === 0) return {status:'BROKEN', reason:'0-Byte', size:0};
-      const relPath = file.webkitRelativePath || file.name;
-      const ext = (file.name.split('.').pop()||'').toLowerCase();
-      if(!SUPPORTED.includes('.'+ext)) return {status:'SKIPPED', reason:'nicht unterstützt', size: file.size, relPath};
-
-      if(ext === 'package'){
-        try{
+        if(file.size === 0){ postMessage({id, result:{relPath,status:'BROKEN',reason:'0-Byte',size:0,sha1:null}}); return; }
+        const ext = (file.name.split('.').pop()||'').toLowerCase();
+        if(!['package','ts4script','zip'].includes(ext)){ postMessage({id, result:{relPath,status:'SKIPPED',reason:'nicht unterstützt',size:file.size,sha1:null}}); return; }
+        if(ext === 'package'){
           const b = await readFirstBytes(file,4);
-          const ok = (b[0]==0x44 && b[1]==0x42 && b[2]==0x50 && b[3]==0x46);
+          const ok = b && b[0]==0x44 && b[1]==0x42 && b[2]==0x50 && b[3]==0x46;
           const sha1 = await computeSHA1(file);
-          return ok ? {status:'OK', type:'CC', size:file.size, sha1, relPath} : {status:'BROKEN', reason:'keine DBPF-Signatur', size:file.size, sha1, relPath};
-        }catch(e){
-          const sha1 = await computeSHA1(file).catch(()=>null);
-          return {status:'BROKEN', reason:'Lesefehler', size:file.size, sha1, relPath};
+          if(ok) postMessage({id, result:{relPath,status:'OK',type:'CC',size:file.size,sha1}});
+          else postMessage({id, result:{relPath,status:'BROKEN',reason:'keine DBPF-Signatur',size:file.size,sha1}});
+          return;
         }
-      }
-
-      if(ext==='zip' || ext==='ts4script'){
-        try{
-          const buf = await file.arrayBuffer();
-          // quick attempt to read as zip using JSZip
-          await JSZip.loadAsync(buf);
+        if(ext==='zip' || ext==='ts4script'){
+          const valid = await testZip(file);
           const sha1 = await computeSHA1(file);
-          return {status:'OK', type: ext==='ts4script'?'Script':'ZIP', size:file.size, sha1, relPath};
-        }catch(e){
-          const sha1 = await computeSHA1(file).catch(()=>null);
-          return {status:'BROKEN', reason:'Ungültiges ZIP', size:file.size, sha1, relPath};
+          if(valid) postMessage({id, result:{relPath,status:'OK',type: ext==='ts4script'?'Script':'ZIP',size:file.size,sha1}});
+          else postMessage({id, result:{relPath,status:'BROKEN',reason:'Ungültiges ZIP',size:file.size,sha1}});
+          return;
         }
-      }
-
-      return {status:'SKIPPED', reason:'Unhandled', size:file.size, relPath};
-    }
-
-    function appendLog(entry){
-      const div = document.createElement('div');
-      div.className = 'line ' + (entry.status==='OK' ? (entry.type==='CC'?'cc':'ok') : (entry.status==='BROKEN'?'broken':'skipped'));
-      const left = document.createElement('div'); left.className='left';
-      left.innerHTML = `<strong>${escapeHtml(entry.relPath)}</strong><div class="meta">${entry.type?entry.type+' • ':''}${formatBytes(entry.size)} ${entry.sha1? '• '+entry.sha1.slice(0,12):''} ${entry.reason? '• '+entry.reason : ''}</div>`;
-      const right = document.createElement('div'); right.className='meta';
-      right.innerHTML = entry.status==='OK'? '✔' : (entry.status==='BROKEN'? '✖' : '➖');
-      div.appendChild(left); div.appendChild(right);
-      div.dataset.path = entry.relPath.toLowerCase();
-      log.appendChild(div);
-    }
-
-    function updateStats(){
-      statScanned.textContent = report.length;
-      statOK.textContent = report.filter(r=>r.status==='OK').length;
-      statBroken.textContent = report.filter(r=>r.status==='BROKEN').length;
-      statSkipped.textContent = report.filter(r=>r.status==='SKIPPED').length;
-      const dupCount = Object.values(shaMap).filter(a=>a.length>1).reduce((s,a)=>s+a.length,0);
-      statDup.textContent = dupCount;
-      const elapsed = startTime ? Math.round((Date.now()-startTime)/1000) : 0;
-      statTime.textContent = elapsed + 's';
-    }
-
-    function formatBytes(n){ if(n==null) return '—'; if(n<1024) return n+' B'; if(n<1024*1024) return (n/1024).toFixed(1)+' KB'; return (n/1024/1024).toFixed(2)+' MB'; }
-
-    function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-    function refreshTopList(){
-      const rows = report.filter(r=>r.size>0).sort((a,b)=>b.size-a.size).slice(0,10);
-      topTableBody.innerHTML='';
-      for(const r of rows){
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td class="small">${escapeHtml(r.relPath)}</td><td class="small">${formatBytes(r.size)}</td><td class="small mono">${r.sha1? r.sha1.slice(0,12):'—'}</td>`;
-        topTableBody.appendChild(tr);
-      }
-    }
-
-    function applyLiveFilter(){
-      const q = (search.value||'').toLowerCase();
-      Array.from(log.children).forEach(div=>{
-        const path = div.dataset.path || '';
-        div.style.display = path.includes(q) ? 'flex' : 'none';
-      });
-    }
-
-    // scan handler
-    scanBtn.onclick = async ()=>{
-      const files = Array.from(fileInput.files || []);
-      if(files.length === 0){ alert('Bitte Dateien/Ordner wählen!'); return; }
-      if(files.length > MAX_FILES){ alert('Max '+MAX_FILES+' Dateien erlaubt.'); return; }
-
-      // reset
-      report = []; shaMap = {}; log.innerHTML=''; progress.style.display='block'; progress.value=0; startTime = Date.now();
-
-      for(let i=0;i<files.length;i++){
-        const f = files[i];
-        const rel = f.webkitRelativePath || f.name;
-        appendTemporaryLine(rel, 'Prüfe...');
-        try{
-          const res = await classify(f);
-          res.fileObj = f; res.relPath = res.relPath || rel;
-          report.push(res);
-
-          // sha map
-          if(res.sha1){
-            shaMap[res.sha1] = shaMap[res.sha1] || [];
-            shaMap[res.sha1].push(res);
-          }
-
-          // append to log
-          appendLog(res);
-        }catch(e){
-          const err = {relPath:rel,status:'BROKEN',reason:'Fehler',size:f.size,sha1:null}; report.push(err); appendLog(err);
-        }
-        progress.value = Math.round(((i+1)/files.length)*100);
-        updateStats(); refreshTopList();
-      }
-
-      // mark duplicates in log
-      markDuplicates();
-
-      progress.style.display='none';
-      updateStats(); refreshTopList();
-      const totalSec = Math.round((Date.now()-startTime)/1000);
-      statTime.textContent = totalSec + 's';
-      log.insertAdjacentHTML('beforeend', `<div class="summary">Scan beendet — Dauer: <strong>${totalSec}s</strong></div>`);
+      }catch(e){ postMessage({id, result:{relPath,status:'BROKEN',reason:'Fehler',size:file.size,sha1:null}}); }
     };
+  `;
 
-    function appendTemporaryLine(rel, msg){
-      const div = document.createElement('div'); div.className='line skipped'; div.innerHTML = `<div class="left"><strong>${escapeHtml(rel)}</strong><div class="meta">${msg}</div></div><div class="meta">…</div>`; div.dataset.path = rel.toLowerCase(); log.appendChild(div);
+  const workerBlobs = [];
+  for(let i=0;i<WORKER_COUNT;i++){
+    const blob = new Blob([WORKER_CODE], {type:'application/javascript'});
+    const url = URL.createObjectURL(blob);
+    workerBlobs.push(url);
+  }
+
+  function createWorker(url){
+    const w = new Worker(url);
+    return w;
+  }
+
+  // --- Helpers ---
+  function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function formatBytes(n){ if(n==null) return '—'; if(n<1024) return n+' B'; if(n<1024*1024) return (n/1024).toFixed(1)+' KB'; return (n/1024/1024).toFixed(2)+' MB'; }
+
+  function appendLog(entry){
+    const div = document.createElement('div');
+    div.className = 'line ' + (entry.status==='OK'? (entry.type==='CC'?'cc':'ok') : (entry.status==='BROKEN'?'broken':'skipped'));
+    div.dataset.path = (entry.relPath||'').toLowerCase();
+
+    const left = document.createElement('div'); left.className='left';
+    left.innerHTML = `<strong>${escapeHtml(entry.relPath)}</strong><div class="meta">${entry.type?entry.type+' • ':''}${formatBytes(entry.size)} ${entry.sha1? '• '+entry.sha1.slice(0,12):''} ${entry.reason? '• '+entry.reason : ''}</div>`;
+
+    const right = document.createElement('div'); right.className='meta';
+    right.textContent = entry.status==='OK'? '✔' : (entry.status==='BROKEN'? '✖' : '➖');
+
+    div.appendChild(left); div.appendChild(right);
+    log.appendChild(div);
+  }
+
+  function updateStats(){
+    statScanned.textContent = report.length;
+    statOK.textContent = report.filter(r=>r.status==='OK').length;
+    statBroken.textContent = report.filter(r=>r.status==='BROKEN').length;
+    statSkipped.textContent = report.filter(r=>r.status==='SKIPPED').length;
+    const dupCount = Object.values(shaMap).filter(a=>a.length>1).reduce((s,a)=>s+a.length,0);
+    statDup.textContent = dupCount;
+    const elapsed = startTime ? Math.round((Date.now()-startTime)/1000) : 0;
+    statTime.textContent = elapsed + 's';
+  }
+
+  function refreshTopList(){
+    const rows = report.filter(r=>r.size>0).sort((a,b)=>b.size-a.size).slice(0,10);
+    topTableBody.innerHTML='';
+    for(const r of rows){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${escapeHtml(r.relPath)}</td><td class="mono">${formatBytes(r.size)}</td><td class="mono">${r.sha1? r.sha1.slice(0,12):'—'}</td>`;
+      topTableBody.appendChild(tr);
+    }
+  }
+
+  function applyLiveFilter(){
+    const q = (search.value||'').toLowerCase();
+    Array.from(log.children).forEach(div=>{ div.style.display = (div.dataset.path||'').includes(q) ? '' : 'none'; });
+  }
+
+  // --- Scan using worker pool ---
+  scanBtn.onclick = async ()=>{
+    const files = Array.from(fileInput.files || []);
+    if(files.length===0){ alert('Bitte Dateien/Ordner wählen!'); return; }
+    if(files.length>MAX_FILES){ alert('Max '+MAX_FILES+' Dateien erlaubt.'); return; }
+
+    // reset
+    report = []; shaMap = {}; log.innerHTML=''; progress.style.display='block'; progress.value=0; startTime = Date.now(); updateStats(); refreshTopList();
+
+    // prepare workers
+    const workerPool = [];
+    const idle = [];
+    let nextId = 0;
+    const pending = new Map();
+    let completed = 0;
+
+    for(let i=0;i<WORKER_COUNT;i++){
+      const w = createWorker(workerBlobs[i]);
+      w.onmessage = (ev)=>{
+        const {id, result} = ev.data;
+        const resolveData = pending.get(id);
+        if(resolveData){
+          pending.delete(id);
+          handleResult(result);
+          idle.push(w);
+          schedule();
+        }
+      };
+      workerPool.push(w); idle.push(w);
+    }
+
+    function handleResult(res){
+      // attach fileObj from original file list (find by relPath)
+      const f = files.find(ff => (ff.webkitRelativePath||ff.name) === res.relPath);
+      res.fileObj = f || null;
+      report.push(res);
+      if(res.sha1){ shaMap[res.sha1] = shaMap[res.sha1] || []; shaMap[res.sha1].push(res); }
+      appendLog(res);
+      completed++; progress.value = Math.round((completed/files.length)*100);
+      updateStats(); refreshTopList();
+    }
+
+    // queue sending
+    let idx = 0;
+    function schedule(){
+      while(idle.length>0 && idx<files.length){
+        const w = idle.shift();
+        const f = files[idx++];
+        const rel = f.webkitRelativePath || f.name;
+        const id = ++nextId;
+        pending.set(id, {fileName:rel});
+        // send file and relPath
+        // structured clone will copy the File
+        w.postMessage({id, relPath: rel, file: f});
+      }
+      // finish when all done
+      if(completed === files.length){
+        // terminate workers
+        workerPool.forEach(w=>w.terminate());
+        progress.style.display='none';
+        const totalSec = Math.round((Date.now()-startTime)/1000);
+        statTime.textContent = totalSec + 's';
+        log.insertAdjacentHTML('beforeend', `<div class="line summary">Scan beendet — Dauer: <strong>${totalSec}s</strong></div>`);
+        // mark duplicates
+        markDuplicates(); updateStats();
+      }
     }
 
     function markDuplicates(){
       let dups = 0;
       Object.entries(shaMap).forEach(([sha, arr])=>{
-        if(arr.length>1){
-          dups += arr.length;
-          arr.forEach(item=>{
-            // find log entry matching path and add duplicate badge
-            const nodes = Array.from(log.children).filter(n=>n.dataset.path === (item.relPath||'').toLowerCase());
-            nodes.forEach(n=>{
-              const badge = document.createElement('span'); badge.className='meta'; badge.style.marginLeft='8px'; badge.style.color='#ffd166'; badge.textContent=' DUP';
-              n.querySelector('.left').appendChild(badge);
-            });
-          });
-        }
+        if(arr.length>1){ dups += arr.length; arr.forEach(item=>{
+          const nodes = Array.from(log.children).filter(n=>n.dataset.path === (item.relPath||'').toLowerCase());
+          nodes.forEach(n=>{ const badge = document.createElement('span'); badge.className='meta'; badge.style.marginLeft='8px'; badge.style.color='#ffd166'; badge.textContent=' DUP'; n.querySelector('.left').appendChild(badge); });
+        }); }
       });
       statDup.textContent = dups;
     }
 
-    // ZIP creation honoring filters and preserving folder structure
-    zipBtn.onclick = async ()=>{
-      const zip = new JSZip();
-      for(const entry of report){
-        if(entry.status !== 'OK') continue;
-        if(entry.type==='CC' && !filterCC.checked) continue;
-        if(entry.type==='Script' && !filterScript.checked) continue;
-        if(entry.type==='ZIP' && !filterZip.checked) continue;
-        try{
-          const buf = await entry.fileObj.arrayBuffer();
-          zip.file(entry.relPath, buf);
-        }catch(e){ console.warn('Fehler beim Hinzufügen', entry.relPath, e); }
-      }
-      const blob = await zip.generateAsync({type:'blob'});
-      const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = 'CleanMods.zip'; a.click(); URL.revokeObjectURL(u);
-    };
+    // kick off
+    schedule();
+  };
 
-    resetBtn.onclick = ()=>{ fileInput.value=''; report=[]; shaMap={}; log.innerHTML='Das Protokoll wird hier angezeigt...'; topTableBody.innerHTML=''; updateStats(); };
+  // ZIP creation preserves structure and honors filters
+  zipBtn.onclick = async ()=>{
+    const zip = new JSZip();
+    for(const entry of report){
+      if(entry.status !== 'OK') continue;
+      if(entry.type==='CC' && !filterCC.checked) continue;
+      if(entry.type==='Script' && !filterScript.checked) continue;
+      if(entry.type==='ZIP' && !filterZip.checked) continue;
+      try{ const buf = await entry.fileObj.arrayBuffer(); zip.file(entry.relPath, buf); }catch(e){console.warn('Zip add error', entry.relPath, e);}    }
+    const blob = await zip.generateAsync({type:'blob'});
+    const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = 'CleanMods.zip'; a.click(); URL.revokeObjectURL(u);
+  };
 
-    search.addEventListener('input', ()=>{ applyLiveFilter(); });
-
-    // when user clicks the dropzone, open file input
-    document.querySelector('.dropzone').addEventListener('click', ()=> fileInput.click());
+  resetBtn.onclick = ()=>{ fileInput.value=''; report=[]; shaMap={}; log.innerHTML='Das Protokoll wird hier angezeigt...'; topTableBody.innerHTML=''; updateStats(); };
+  search.addEventListener('input', applyLiveFilter);
+  document.querySelector('.dropzone').addEventListener('click', ()=> fileInput.click());
 
   </script>
 </body>
