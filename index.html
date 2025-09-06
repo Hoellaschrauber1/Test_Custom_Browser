@@ -33,6 +33,22 @@
     .zip{background:linear-gradient(90deg, rgba(155,89,182,0.04), transparent);color:#af7ac5}
     .broken{background:linear-gradient(90deg, rgba(231,76,60,0.04), transparent);color:#e74c3c;animation:blink 1s step-start infinite;}
     .skipped{background:linear-gradient(90deg, rgba(149, 165, 166, 0.04), transparent);color:#95a5a6;}
+    .copy-btn {
+        background: none;
+        border: 1px solid #95a5a6;
+        color: #95a5a6;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        border-radius: 6px;
+        transition: background-color 0.2s, color 0.2s;
+        margin-left: 8px;
+    }
+    .copy-btn:hover {
+        background: #95a5a6;
+        color: #0d1117;
+    }
     @keyframes blink{50%{opacity:0.6}}
     .stats{display:flex;gap:8px;flex-wrap:wrap;}
     .stat{background:#0b1216;padding:8px 10px;border-radius:8px;border:1px solid #1e262a;color:#bfcbd6;}
@@ -120,296 +136,342 @@
   </div>
 
   <script>
-  // --- Konfiguration ---
-  const SUPPORTED = ['.package', '.ts4script', '.zip'];
-  const MAX_FILES = 4000;
-  const WORKER_COUNT = Math.max(1, (navigator.hardwareConcurrency || 4) - 1); // leave one core free
+  try {
+    // --- Konfiguration ---
+    const SUPPORTED = ['.package', '.ts4script', '.zip'];
+    const MAX_FILES = 4000;
+    const WORKER_COUNT = Math.max(1, (navigator.hardwareConcurrency || 4) - 1); // leave one core free
 
-  // --- UI Referenzen ---
-  const fileInput = document.getElementById('fileInput');
-  const scanBtn = document.getElementById('scanBtn');
-  const zipBtn = document.getElementById('zipBtn');
-  const zipBrokenBtn = document.getElementById('zipBrokenBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const log = document.getElementById('log');
-  const progress = document.getElementById('progress');
-  const statScanned = document.getElementById('statScanned');
-  const statOK = document.getElementById('statOK');
-  const statBroken = document.getElementById('statBroken');
-  const statSkipped = document.getElementById('statSkipped');
-  const statDup = document.getElementById('statDup');
-  const statTime = document.getElementById('statTime');
-  const filterCC = document.getElementById('filterCC');
-  const filterScript = document.getElementById('filterScript');
-  const filterZip = document.getElementById('filterZip');
-  const search = document.getElementById('search');
-  const statusFilter = document.getElementById('statusFilter');
-  const topTableBody = document.querySelector('#topTable tbody');
-  const messageBox = document.getElementById('message-box');
-  document.getElementById('workerCount').textContent = WORKER_COUNT;
+    // --- UI Referenzen ---
+    const fileInput = document.getElementById('fileInput');
+    const scanBtn = document.getElementById('scanBtn');
+    const zipBtn = document.getElementById('zipBtn');
+    const zipBrokenBtn = document.getElementById('zipBrokenBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const log = document.getElementById('log');
+    const progress = document.getElementById('progress');
+    const statScanned = document.getElementById('statScanned');
+    const statOK = document.getElementById('statOK');
+    const statBroken = document.getElementById('statBroken');
+    const statSkipped = document.getElementById('statSkipped');
+    const statDup = document.getElementById('statDup');
+    const statTime = document.getElementById('statTime');
+    const filterCC = document.getElementById('filterCC');
+    const filterScript = document.getElementById('filterScript');
+    const filterZip = document.getElementById('filterZip');
+    const search = document.getElementById('search');
+    const statusFilter = document.getElementById('statusFilter');
+    const topTableBody = document.querySelector('#topTable tbody');
+    const messageBox = document.getElementById('message-box');
+    document.getElementById('workerCount').textContent = WORKER_COUNT;
 
-  // --- Laufende Daten ---
-  let report = []; // Einträge: {relPath, status, reason, type, size, sha1, fileObj}
-  let shaMap = {}; // sha1 -> [entries]
-  let startTime = 0;
+    // --- Laufende Daten ---
+    let report = []; // Einträge: {relPath, status, reason, type, size, sha1, fileObj}
+    let shaMap = {}; // sha1 -> [entries]
+    let startTime = 0;
 
-  // --- Worker-Pool Setup ---
-  const WORKER_CODE = `
-    self.importScripts('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
-    async function readFirstBytes(file, len=4){
-      try{ const buf = await file.slice(0,len).arrayBuffer(); return new Uint8Array(buf); }catch(e){ return null; }
-    }
-    async function computeSHA1(file){ try{ const buf = await file.arrayBuffer(); const hash = await crypto.subtle.digest('SHA-1', buf); return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join(''); }catch(e){ return null; } }
-    async function testZip(file){ try{ const buf = await file.arrayBuffer(); await JSZip.loadAsync(buf); return true; }catch(e){ return false; } }
-    self.onmessage = async (ev) => {
-      const {id, relPath, file} = ev.data;
-      try{
-        if(file.size === 0){ postMessage({id, result:{relPath,status:'BROKEN',reason:'0-Byte',size:0,sha1:null}}); return; }
-        const ext = (file.name.split('.').pop()||'').toLowerCase();
-        if(!['package','ts4script','zip'].includes(ext)){ postMessage({id, result:{relPath,status:'SKIPPED',reason:'nicht unterstützt',size:file.size,sha1:null}}); return; }
-        if(ext === 'package'){
-          const b = await readFirstBytes(file,4);
-          const ok = b && b[0]==0x44 && b[1]==0x42 && b[2]==0x50 && b[3]==0x46;
-          const sha1 = await computeSHA1(file);
-          if(ok) postMessage({id, result:{relPath,status:'OK',type:'CC',size:file.size,sha1}});
-          else postMessage({id, result:{relPath,status:'BROKEN',reason:'keine DBPF-Signatur',size:file.size,sha1}});
-          return;
-        }
-        if(ext==='zip' || ext==='ts4script'){
-          const valid = await testZip(file);
-          const sha1 = await computeSHA1(file);
-          if(valid) postMessage({id, result:{relPath,status:'OK',type: ext==='ts4script'?'Script':'ZIP',size:file.size,sha1}});
-          else postMessage({id, result:{relPath,status:'BROKEN',reason:'Ungültiges ZIP',size:file.size,sha1}});
-          return;
-        }
-      }catch(e){ postMessage({id, result:{relPath,status:'BROKEN',reason:'Fehler',size:file.size,sha1:null}}); }
-    };
-  `;
-
-  const workerBlobs = [];
-  for(let i=0;i<WORKER_COUNT;i++){
-    const blob = new Blob([WORKER_CODE], {type:'application/javascript'});
-    const url = URL.createObjectURL(blob);
-    workerBlobs.push(url);
-  }
-
-  function createWorker(url){
-    const w = new Worker(url);
-    return w;
-  }
-
-  // --- Helpers ---
-  function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function formatBytes(n){ if(n==null) return '—'; if(n<1024) return n+' B'; if(n<1024*1024) return (n/1024).toFixed(1)+' KB'; return (n/1024/1024).toFixed(2)+' MB'; }
-
-  function showMessage(message, duration = 3000) {
-    messageBox.textContent = message;
-    messageBox.style.display = 'block';
-    setTimeout(() => {
-        messageBox.style.display = 'none';
-    }, duration);
-  }
-
-  function appendLog(entry){
-    const div = document.createElement('div');
-    div.className = 'line ' + (entry.status==='OK'? (entry.type==='CC'?'cc':'ok') : (entry.status==='BROKEN'?'broken':'skipped'));
-    div.dataset.path = (entry.relPath||'').toLowerCase();
-    div.dataset.status = entry.status;
-    div.dataset.type = entry.type;
-
-    const left = document.createElement('div'); left.className='left';
-    left.innerHTML = `<strong>${escapeHtml(entry.relPath)}</strong><div class="meta">${entry.type?entry.type+' • ':''}${formatBytes(entry.size)} ${entry.sha1? '• '+entry.sha1.slice(0,12):''} ${entry.reason? '• '+entry.reason : ''}</div>`;
-
-    const right = document.createElement('div'); right.className='meta';
-    right.textContent = entry.status==='OK'? '✔' : (entry.status==='BROKEN'? '✖' : '➖');
-
-    div.appendChild(left); div.appendChild(right);
-    log.appendChild(div);
-  }
-
-  function updateStats(){
-    statScanned.textContent = report.length;
-    statOK.textContent = report.filter(r=>r.status==='OK').length;
-    statBroken.textContent = report.filter(r=>r.status==='BROKEN').length;
-    statSkipped.textContent = report.filter(r=>r.status==='SKIPPED').length;
-    const dupCount = Object.values(shaMap).filter(a=>a.length>1).reduce((s,a)=>s+a.length,0);
-    statDup.textContent = dupCount;
-    const elapsed = startTime ? Math.round((Date.now()-startTime)/1000) : 0;
-    statTime.textContent = elapsed + 's';
-  }
-
-  function refreshTopList(){
-    const rows = report.filter(r=>r.size>0).sort((a,b)=>b.size-a.size).slice(0,10);
-    topTableBody.innerHTML='';
-    for(const r of rows){
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td>${escapeHtml(r.relPath)}</td><td class="mono">${formatBytes(r.size)}</td><td class="mono">${r.sha1? r.sha1.slice(0,12):'—'}</td>`;
-      topTableBody.appendChild(tr);
-    }
-  }
-
-  function applyLiveFilter(){
-    const q = (search.value || '').toLowerCase();
-    const status = statusFilter.value;
-    const filterCC_checked = filterCC.checked;
-    const filterScript_checked = filterScript.checked;
-    const filterZip_checked = filterZip.checked;
-
-    Array.from(log.children).forEach(div => {
-      const pathMatch = (div.dataset.path || '').includes(q);
-      const statusMatch = (status === 'all' || div.dataset.status === status.toUpperCase());
-
-      let typeMatch = true;
-      if (div.dataset.status === 'OK') {
-        typeMatch = (div.dataset.type === 'CC' && filterCC_checked) ||
-                    (div.dataset.type === 'Script' && filterScript_checked) ||
-                    (div.dataset.type === 'ZIP' && filterZip_checked);
+    // --- Worker-Pool Setup ---
+    const WORKER_CODE = `
+      self.importScripts('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
+      async function readFirstBytes(file, len=4){
+        try{ const buf = await file.slice(0,len).arrayBuffer(); return new Uint8Array(buf); }catch(e){ return null; }
       }
-
-      div.style.display = (pathMatch && statusMatch && typeMatch) ? '' : 'none';
-    });
-  }
-
-  // --- Scan using worker pool ---
-  scanBtn.onclick = async ()=>{
-    const files = Array.from(fileInput.files || []);
-    if(files.length===0){ showMessage('Bitte Dateien/Ordner wählen!'); return; }
-    if(files.length>MAX_FILES){ showMessage('Max '+MAX_FILES+' Dateien erlaubt.'); return; }
-
-    // reset
-    report = []; shaMap = {}; log.innerHTML='Das Protokoll wird hier angezeigt...'; progress.style.display='block'; progress.value=0; startTime = Date.now(); updateStats(); refreshTopList();
-    zipBrokenBtn.disabled = true;
-
-    // prepare workers
-    const workerPool = [];
-    const idle = [];
-    let nextId = 0;
-    const pending = new Map();
-    let completed = 0;
-
-    for(let i=0;i<WORKER_COUNT;i++){
-      const w = createWorker(workerBlobs[i]);
-      w.onmessage = (ev)=>{
-        const {id, result} = ev.data;
-        const resolveData = pending.get(id);
-        if(resolveData){
-          pending.delete(id);
-          handleResult(result);
-          idle.push(w);
-          schedule();
-        }
+      async function computeSHA1(file){ try{ const buf = await file.arrayBuffer(); const hash = await crypto.subtle.digest('SHA-1', buf); return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join(''); }catch(e){ return null; } }
+      async function testZip(file){ try{ const buf = await file.arrayBuffer(); await JSZip.loadAsync(buf); return true; }catch(e){ return false; } }
+      self.onmessage = async (ev) => {
+        const {id, relPath, file} = ev.data;
+        try{
+          if(file.size === 0){ postMessage({id, result:{relPath,status:'BROKEN',reason:'0-Byte',size:0,sha1:null}}); return; }
+          const ext = (file.name.split('.').pop()||'').toLowerCase();
+          if(!['package','ts4script','zip'].includes(ext)){ postMessage({id, result:{relPath,status:'SKIPPED',reason:'nicht unterstützt',size:file.size,sha1:null}}); return; }
+          if(ext === 'package'){
+            const b = await readFirstBytes(file,4);
+            const ok = b && b[0]==0x44 && b[1]==0x42 && b[2]==0x50 && b[3]==0x46;
+            const sha1 = await computeSHA1(file);
+            if(ok) postMessage({id, result:{relPath,status:'OK',type:'CC',size:file.size,sha1}});
+            else postMessage({id, result:{relPath,status:'BROKEN',reason:'keine DBPF-Signatur',size:file.size,sha1}});
+            return;
+          }
+          if(ext==='zip' || ext==='ts4script'){
+            const valid = await testZip(file);
+            const sha1 = await computeSHA1(file);
+            if(valid) postMessage({id, result:{relPath,status:'OK',type: ext==='ts4script'?'Script':'ZIP',size:file.size,sha1}});
+            else postMessage({id, result:{relPath,status:'BROKEN',reason:'Ungültiges ZIP',size:file.size,sha1}});
+            return;
+          }
+        }catch(e){ postMessage({id, result:{relPath,status:'BROKEN',reason:'Fehler',size:file.size,sha1:null}}); }
       };
-      workerPool.push(w); idle.push(w);
+    `;
+
+    const workerBlobs = [];
+    for(let i=0;i<WORKER_COUNT;i++){
+      const blob = new Blob([WORKER_CODE], {type:'application/javascript'});
+      const url = URL.createObjectURL(blob);
+      workerBlobs.push(url);
     }
 
-    function handleResult(res){
-      // attach fileObj from original file list (find by relPath)
-      const f = files.find(ff => (ff.webkitRelativePath||ff.name) === res.relPath);
-      res.fileObj = f || null;
-      report.push(res);
-      if(res.sha1){ shaMap[res.sha1] = shaMap[res.sha1] || []; shaMap[res.sha1].push(res); }
-      appendLog(res);
-      completed++; progress.value = Math.round((completed/files.length)*100);
-      updateStats(); refreshTopList();
+    function createWorker(url){
+      const w = new Worker(url);
+      return w;
     }
 
-    // queue sending
-    let idx = 0;
-    function schedule(){
-      while(idle.length>0 && idx<files.length){
-        const w = idle.shift();
-        const f = files[idx++];
-        const rel = f.webkitRelativePath || f.name;
-        const id = ++nextId;
-        pending.set(id, {fileName:rel});
-        // send file and relPath
-        // structured clone will copy the File
-        w.postMessage({id, relPath: rel, file: f});
+    // --- Helpers ---
+    function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function formatBytes(n){ if(n==null) return '—'; if(n<1024) return n+' B'; if(n<1024*1024) return (n/1024).toFixed(1)+' KB'; return (n/1024/1024).toFixed(2)+' MB'; }
+
+    function showMessage(message, duration = 3000) {
+      messageBox.textContent = message;
+      messageBox.style.display = 'block';
+      setTimeout(() => {
+          messageBox.style.display = 'none';
+      }, duration);
+    }
+
+    function copyToClipboard(text) {
+      try {
+        const tempInput = document.createElement('textarea');
+        tempInput.value = text;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        showMessage('Dateiname kopiert!');
+      } catch (e) {
+        console.error("Kopieren in Zwischenablage fehlgeschlagen:", e);
+        showMessage('Kopieren fehlgeschlagen. Bitte manuell kopieren.');
       }
-      // finish when all done
-      if(completed === files.length){
-        // terminate workers
-        workerPool.forEach(w=>w.terminate());
-        progress.style.display='none';
-        const totalSec = Math.round((Date.now()-startTime)/1000);
-        statTime.textContent = totalSec + 's';
-        log.insertAdjacentHTML('beforeend', `<div class="line summary">Scan beendet — Dauer: <strong>${totalSec}s</strong></div>`);
-        // mark duplicates
-        markDuplicates(); updateStats();
-        zipBrokenBtn.disabled = report.filter(r=>r.status === 'BROKEN').length === 0;
+    }
+
+    function appendLog(entry){
+      const div = document.createElement('div');
+      if (entry.status === 'OK') {
+          div.className = 'line ok';
+      } else if (entry.status === 'BROKEN') {
+          div.className = 'line broken';
+      } else if (entry.status === 'SKIPPED') {
+          div.className = 'line skipped';
+      } else {
+          div.className = 'line';
+      }
+      div.dataset.path = (entry.relPath||'').toLowerCase();
+      div.dataset.status = entry.status;
+      div.dataset.type = entry.type;
+
+      const left = document.createElement('div'); left.className='left';
+      left.innerHTML = `<strong>${escapeHtml(entry.relPath)}</strong><div class="meta">${entry.type?entry.type+' • ':''}${formatBytes(entry.size)} ${entry.sha1? '• '+entry.sha1.slice(0,12):''} ${entry.reason? '• '+entry.reason : ''}</div>`;
+
+      const right = document.createElement('div'); right.className='meta';
+      if (entry.status === 'OK') {
+        right.textContent = '✔';
+      } else if (entry.status === 'BROKEN') {
+        right.textContent = '✖';
+      } else if (entry.status === 'SKIPPED') {
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.textContent = 'Kopieren';
+        copyBtn.onclick = () => copyToClipboard(entry.relPath);
+        right.textContent = '➖';
+        right.appendChild(copyBtn);
+      }
+      
+      div.appendChild(left); div.appendChild(right);
+      log.appendChild(div);
+    }
+
+    function updateStats(){
+      statScanned.textContent = report.length;
+      statOK.textContent = report.filter(r=>r.status==='OK').length;
+      statBroken.textContent = report.filter(r=>r.status==='BROKEN').length;
+      statSkipped.textContent = report.filter(r=>r.status==='SKIPPED').length;
+      const dupCount = Object.values(shaMap).filter(a=>a.length>1).reduce((s,a)=>s+a.length,0);
+      statDup.textContent = dupCount;
+      const elapsed = startTime ? Math.round((Date.now()-startTime)/1000) : 0;
+      statTime.textContent = elapsed + 's';
+    }
+
+    function refreshTopList(){
+      const rows = report.filter(r=>r.size>0).sort((a,b)=>b.size-a.size).slice(0,10);
+      topTableBody.innerHTML='';
+      for(const r of rows){
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(r.relPath)}</td><td class="mono">${formatBytes(r.size)}</td><td class="mono">${r.sha1? r.sha1.slice(0,12):'—'}</td>`;
+        topTableBody.appendChild(tr);
       }
     }
 
-    function markDuplicates(){
-      let dups = 0;
-      Object.entries(shaMap).forEach(([sha, arr])=>{
-        if(arr.length>1){ dups += arr.length; arr.forEach(item=>{
-          const nodes = Array.from(log.children).filter(n=>n.dataset.path === (item.relPath||'').toLowerCase());
-          nodes.forEach(n=>{ const badge = document.createElement('span'); badge.className='meta'; badge.style.marginLeft='8px'; badge.style.color='#ffd166'; badge.textContent=' DUP'; n.querySelector('.left').appendChild(badge); });
-        }); }
+    function applyLiveFilter(){
+      const q = (search.value || '').toLowerCase();
+      const status = statusFilter.value;
+      const filterCC_checked = filterCC.checked;
+      const filterScript_checked = filterScript.checked;
+      const filterZip_checked = filterZip.checked;
+
+      Array.from(log.children).forEach(div => {
+        const pathMatch = (div.dataset.path || '').includes(q);
+        const statusMatch = (status === 'all' || div.dataset.status === status.toUpperCase());
+
+        let typeMatch = true;
+        if (div.dataset.status === 'OK') {
+          typeMatch = (div.dataset.type === 'CC' && filterCC_checked) ||
+                      (div.dataset.type === 'Script' && filterScript_checked) ||
+                      (div.dataset.type === 'ZIP' && filterZip_checked);
+        }
+
+        div.style.display = (pathMatch && statusMatch && typeMatch) ? '' : 'none';
       });
-      statDup.textContent = dups;
     }
 
-    // kick off
-    schedule();
-  };
+    // --- Scan using worker pool ---
+    scanBtn.onclick = async ()=>{
+      const files = Array.from(fileInput.files || []);
+      if(files.length===0){ showMessage('Bitte Dateien/Ordner wählen!'); return; }
+      if(files.length>MAX_FILES){ showMessage('Max '+MAX_FILES+' Dateien erlaubt.'); return; }
 
-  // ZIP creation preserves structure and honors filters
-  zipBtn.onclick = async ()=>{
-    const zip = new JSZip();
-    let filesAdded = 0;
-    for(const entry of report){
-      if(entry.status !== 'OK') continue;
-      if(entry.type==='CC' && !filterCC.checked) continue;
-      if(entry.type==='Script' && !filterScript.checked) continue;
-      if(entry.type==='ZIP' && !filterZip.checked) continue;
-      if(!entry.fileObj){ console.warn(`Skipping file due to missing fileObj: ${entry.relPath}`); continue; }
-      try{ const buf = await entry.fileObj.arrayBuffer(); zip.file(entry.relPath, buf); filesAdded++; }catch(e){console.warn('Zip add error', entry.relPath, e);}
-    }
-    if(filesAdded === 0){ showMessage('Keine Mods für den Download ausgewählt.'); return; }
-    const blob = await zip.generateAsync({type:'blob'});
-    const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = 'CleanMods.zip'; a.click(); URL.revokeObjectURL(u);
-    showMessage(`Download von ${filesAdded} Mods ausgelöst!`);
-  };
+      // reset
+      report = []; shaMap = {}; log.innerHTML='Das Protokoll wird hier angezeigt...'; progress.style.display='block'; progress.value=0; startTime = Date.now(); updateStats(); refreshTopList();
+      zipBrokenBtn.disabled = true;
 
-  zipBrokenBtn.onclick = async () => {
+      // prepare workers
+      const workerPool = [];
+      const idle = [];
+      let nextId = 0;
+      const pending = new Map();
+      let completed = 0;
+
+      for(let i=0;i<WORKER_COUNT;i++){
+        const w = createWorker(workerBlobs[i]);
+        w.onmessage = (ev)=>{
+          const {id, result} = ev.data;
+          const resolveData = pending.get(id);
+          if(resolveData){
+            pending.delete(id);
+            handleResult(result);
+            idle.push(w);
+            schedule();
+          }
+        };
+        workerPool.push(w); idle.push(w);
+      }
+
+      function handleResult(res){
+        // attach fileObj from original file list (find by relPath)
+        const f = files.find(ff => (ff.webkitRelativePath||ff.name) === res.relPath);
+        res.fileObj = f || null;
+        report.push(res);
+        if(res.sha1){ shaMap[res.sha1] = shaMap[res.sha1] || []; shaMap[res.sha1].push(res); }
+        appendLog(res);
+        completed++; progress.value = Math.round((completed/files.length)*100);
+        updateStats(); refreshTopList();
+      }
+
+      // queue sending
+      let idx = 0;
+      function schedule(){
+        while(idle.length>0 && idx<files.length){
+          const w = idle.shift();
+          const f = files[idx++];
+          const rel = f.webkitRelativePath || f.name;
+          const id = ++nextId;
+          pending.set(id, {fileName:rel});
+          // send file and relPath
+          // structured clone will copy the File
+          w.postMessage({id, relPath: rel, file: f});
+        }
+        // finish when all done
+        if(completed === files.length){
+          // terminate workers
+          workerPool.forEach(w=>w.terminate());
+          progress.style.display='none';
+          const totalSec = Math.round((Date.now()-startTime)/1000);
+          statTime.textContent = totalSec + 's';
+          log.insertAdjacentHTML('beforeend', `<div class="line summary">Scan beendet — Dauer: <strong>${totalSec}s</strong></div>`);
+          // mark duplicates
+          markDuplicates(); updateStats();
+          zipBrokenBtn.disabled = report.filter(r=>r.status === 'BROKEN').length === 0;
+        }
+      }
+
+      function markDuplicates(){
+        let dups = 0;
+        Object.entries(shaMap).forEach(([sha, arr])=>{
+          if(arr.length>1){ dups += arr.length; arr.forEach(item=>{
+            const nodes = Array.from(log.children).filter(n=>n.dataset.path === (item.relPath||'').toLowerCase());
+            nodes.forEach(n=>{ const badge = document.createElement('span'); badge.className='meta'; badge.style.marginLeft='8px'; badge.style.color='#ffd166'; badge.textContent=' DUP'; n.querySelector('.left').appendChild(badge); });
+          }); }
+        });
+        statDup.textContent = dups;
+      }
+
+      // kick off
+      schedule();
+    };
+
+    // ZIP creation preserves structure and honors filters
+    zipBtn.onclick = async ()=>{
       const zip = new JSZip();
       let filesAdded = 0;
-      const brokenMods = report.filter(r => r.status === 'BROKEN');
-      if (brokenMods.length === 0) {
-          showMessage('Keine BROKEN Mods zum Zippen gefunden.');
-          return;
+      for(const entry of report){
+        if(entry.status !== 'OK') continue;
+        if(entry.type==='CC' && !filterCC.checked) continue;
+        if(entry.type==='Script' && !filterScript.checked) continue;
+        if(entry.type==='ZIP' && !filterZip.checked) continue;
+        if(!entry.fileObj){ console.warn(`Skipping file due to missing fileObj: ${entry.relPath}`); continue; }
+        try{ const buf = await entry.fileObj.arrayBuffer(); zip.file(entry.relPath, buf); filesAdded++; }catch(e){console.warn('Zip add error', entry.relPath, e);}
       }
-      for (const entry of brokenMods) {
-          if(!entry.fileObj){ console.warn(`Skipping broken file due to missing fileObj: ${entry.relPath}`); continue; }
-          try {
-              const buf = await entry.fileObj.arrayBuffer();
-              zip.file(entry.relPath, buf);
-              filesAdded++;
-          } catch (e) {
-              console.warn('Zip add error', entry.relPath, e);
-          }
-      }
-      if(filesAdded === 0){ showMessage('Keine BROKEN Mods für den Download gefunden.'); return; }
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const u = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = u;
-      a.download = 'BrokenMods.zip';
-      a.click();
-      URL.revokeObjectURL(u);
-      showMessage(`Download von ${filesAdded} fehlerhaften Mods ausgelöst!`);
-  };
+      if(filesAdded === 0){ showMessage('Keine Mods für den Download ausgewählt.'); return; }
+      const blob = await zip.generateAsync({type:'blob'});
+      const u = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = u; a.download = 'CleanMods.zip'; a.click(); URL.revokeObjectURL(u);
+      showMessage(`Download von ${filesAdded} Mods ausgelöst!`);
+    };
 
-  resetBtn.onclick = ()=>{ fileInput.value=''; report=[]; shaMap={}; log.innerHTML='Das Protokoll wird hier angezeigt...'; topTableBody.innerHTML=''; updateStats(); zipBrokenBtn.disabled = true; };
-  search.addEventListener('input', applyLiveFilter);
-  statusFilter.addEventListener('change', applyLiveFilter);
-  filterCC.addEventListener('change', applyLiveFilter);
-  filterScript.addEventListener('change', applyLiveFilter);
-  filterZip.addEventListener('change', applyLiveFilter);
-  document.querySelector('.dropzone').addEventListener('click', ()=> fileInput.click());
+    zipBrokenBtn.onclick = async () => {
+        const zip = new JSZip();
+        let filesAdded = 0;
+        const brokenMods = report.filter(r => r.status === 'BROKEN');
+        if (brokenMods.length === 0) {
+            showMessage('Keine BROKEN Mods zum Zippen gefunden.');
+            return;
+        }
+        for (const entry of brokenMods) {
+            if(!entry.fileObj){ console.warn(`Skipping broken file due to missing fileObj: ${entry.relPath}`); continue; }
+            try {
+                const buf = await entry.fileObj.arrayBuffer();
+                zip.file(entry.relPath, buf);
+                filesAdded++;
+            } catch (e) {
+                console.warn('Zip add error', entry.relPath, e);
+            }
+        }
+        if(filesAdded === 0){ showMessage('Keine BROKEN Mods für den Download gefunden.'); return; }
+        const blob = await zip.generateAsync({ type: 'blob' });
+        const u = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = u;
+        a.download = 'BrokenMods.zip';
+        a.click();
+        URL.revokeObjectURL(u);
+        showMessage(`Download von ${filesAdded} fehlerhaften Mods ausgelöst!`);
+    };
 
+    resetBtn.onclick = ()=>{ fileInput.value=''; report=[]; shaMap={}; log.innerHTML='Das Protokoll wird hier angezeigt...'; topTableBody.innerHTML=''; updateStats(); zipBrokenBtn.disabled = true; };
+    search.addEventListener('input', applyLiveFilter);
+    statusFilter.addEventListener('change', applyLiveFilter);
+    filterCC.addEventListener('change', applyLiveFilter);
+    filterScript.addEventListener('change', applyLiveFilter);
+    filterZip.addEventListener('change', applyLiveFilter);
+    document.querySelector('.dropzone').addEventListener('click', ()=> fileInput.click());
+
+  } catch (error) {
+    // Anzeigen einer Fehlermeldung auf der Seite, falls das Skript fehlschlägt
+    document.body.innerHTML = `
+      <div style="background: #e74c3c; color: white; padding: 20px; border-radius: 10px; text-align: center; font-size: 18px;">
+        <h2>Unerwarteter Fehler</h2>
+        <p>Ein Fehler ist beim Laden der Anwendung aufgetreten. Bitte versuche es erneut.</p>
+        <p>Details: ${error.message}</p>
+      </div>
+    `;
+    console.error("Fataler Startfehler:", error);
+  }
   </script>
 </body>
 </html>
