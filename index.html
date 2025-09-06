@@ -277,26 +277,27 @@
       async function testZip(file){ try{ const buf = await file.arrayBuffer(); await JSZip.loadAsync(buf); return true; }catch(e){ return false; } }
       self.onmessage = async (ev) => {
         const {id, relPath, file} = ev.data;
+        const buffer = await file.arrayBuffer(); // Dateibuffer sofort lesen
         try{
           if(file.size === 0){ postMessage({id, result:{relPath,status:'BROKEN',reason:'0-Byte',size:0,sha1:null}}); return; }
           const ext = (file.name.split('.').pop()||'').toLowerCase();
           if(!['package','ts4script','zip'].includes(ext)){ postMessage({id, result:{relPath,status:'SKIPPED',reason:'nicht unterstützt',size:file.size,sha1:null}}); return; }
           if(ext === 'package'){
-            const b = await readFirstBytes(file,4);
+            const b = new Uint8Array(buffer,0,4);
             const ok = b && b[0]==0x44 && b[1]==0x42 && b[2]==0x50 && b[3]==0x46;
             const sha1 = await computeSHA1(file);
-            if(ok) postMessage({id, result:{relPath,status:'OK',type:'CC',size:file.size,sha1}});
-            else postMessage({id, result:{relPath,status:'BROKEN',reason:'keine DBPF-Signatur',size:file.size,sha1}});
+            if(ok) postMessage({id, result:{relPath,status:'OK',type:'CC',size:file.size,sha1,buffer}},[buffer]);
+            else postMessage({id, result:{relPath,status:'BROKEN',reason:'keine DBPF-Signatur',size:file.size,sha1,buffer}},[buffer]);
             return;
           }
           if(ext==='zip' || ext==='ts4script'){
             const valid = await testZip(file);
             const sha1 = await computeSHA1(file);
-            if(valid) postMessage({id, result:{relPath,status:'OK',type: ext==='ts4script'?'Script':'ZIP',size:file.size,sha1}});
-            else postMessage({id, result:{relPath,status:'BROKEN',reason:'Ungültiges ZIP',size:file.size,sha1}});
+            if(valid) postMessage({id, result:{relPath,status:'OK',type: ext==='ts4script'?'Script':'ZIP',size:file.size,sha1,buffer}},[buffer]);
+            else postMessage({id, result:{relPath,status:'BROKEN',reason:'Ungültiges ZIP',size:file.size,sha1,buffer}},[buffer]);
             return;
           }
-        }catch(e){ postMessage({id, result:{relPath,status:'BROKEN',reason:'Fehler',size:file.size,sha1:null}}); }
+        }catch(e){ postMessage({id, result:{relPath,status:'BROKEN',reason:'Fehler',size:file.size,sha1:null,buffer}},[buffer]); }
       };
     `;
 
@@ -438,7 +439,7 @@
 
       // reset
       report = []; shaMap = {}; log.innerHTML='Das Protokoll wird hier angezeigt...'; progress.style.display='block'; progress.value=0; startTime = Date.now(); updateStats(); refreshTopList();
-      zipBtn.disabled = true; // Zuerst deaktivieren
+      zipBtn.disabled = true;
       zipBrokenBtn.disabled = true;
       progress.classList.add('animated-progress'); // Animation starten
 
@@ -465,8 +466,6 @@
       }
 
       function handleResult(res){
-        const f = files.find(ff => (ff.webkitRelativePath||ff.name) === res.relPath);
-        res.fileObj = f || null;
         report.push(res);
         if(res.sha1){ shaMap[res.sha1] = shaMap[res.sha1] || []; shaMap[res.sha1].push(res); }
         appendLog(res);
@@ -493,8 +492,8 @@
           statTime.textContent = totalSec + 's';
           log.insertAdjacentHTML('beforeend', `<div class="line summary">Scan beendet — Dauer: <strong>${totalSec}s</strong></div>`);
           markDuplicates(); updateStats();
-          zipBtn.disabled = report.filter(r=>r.status === 'OK').length === 0; // Jetzt aktivieren!
-          zipBrokenBtn.disabled = report.filter(r=>r.status === 'BROKEN').length === 0;
+          zipBtn.disabled = report.filter(r=>r.status === 'OK' && r.buffer).length === 0;
+          zipBrokenBtn.disabled = report.filter(r=>r.status === 'BROKEN' && r.buffer).length === 0;
         }
       }
 
@@ -520,8 +519,8 @@
         if(entry.type==='CC' && !filterCC.checked) continue;
         if(entry.type==='Script' && !filterScript.checked) continue;
         if(entry.type==='ZIP' && !filterZip.checked) continue;
-        if(!entry.fileObj){ console.warn(`Skipping file due to missing fileObj: ${entry.relPath}`); continue; }
-        try{ const buf = await entry.fileObj.arrayBuffer(); zip.file(entry.relPath, buf); filesAdded++; }catch(e){console.warn('Zip add error', entry.relPath, e);}
+        if(!entry.buffer){ console.warn(`Skipping file due to missing buffer: ${entry.relPath}`); continue; }
+        try{ zip.file(entry.relPath, entry.buffer); filesAdded++; }catch(e){console.warn('Zip add error', entry.relPath, e);}
       }
       if(filesAdded === 0){ showMessage('Keine Mods für den Download ausgewählt.'); return; }
       const blob = await zip.generateAsync({type:'blob'});
@@ -539,10 +538,9 @@
             return;
         }
         for (const entry of brokenMods) {
-            if(!entry.fileObj){ console.warn(`Skipping broken file due to missing fileObj: ${entry.relPath}`); continue; }
+            if(!entry.buffer){ console.warn(`Skipping broken file due to missing buffer: ${entry.relPath}`); continue; }
             try {
-                const buf = await entry.fileObj.arrayBuffer();
-                zip.file(entry.relPath, buf);
+                zip.file(entry.relPath, entry.buffer);
                 filesAdded++;
             } catch (e) {
                 console.warn('Zip add error', entry.relPath, e);
