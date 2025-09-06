@@ -50,10 +50,29 @@
     .filters-row{display:flex;flex-wrap:wrap;gap:20px;align-items:center;}
     .filter-group{display:flex;gap:10px;flex-wrap:wrap;}
     .search-input{flex:1;min-width:150px;padding:8px;border-radius:8px;background:#0b1220;border:1px solid #29323a;color:#e6edf3;}
-    #progress{width:100%;height:12px;border-radius:8px;}
+    #progress{width:100%;height:12px;border-radius:8px;border:1px solid #1e262a;box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);-webkit-appearance:none;appearance:none;background:#0d1117;overflow:hidden;}
+    #progress::-webkit-progress-bar{background:transparent;}
+    #progress::-webkit-progress-value{background:#2ecc71;}
+    #progress::-moz-progress-bar{background:#2ecc71;}
+    #progress.animated-progress::-webkit-progress-value{
+        background-color: #2ecc71;
+        background-image: linear-gradient(90deg, #2ecc71 0%, #2ecc71 20%, rgba(255, 255, 255, 0.5) 50%, #2ecc71 80%, #2ecc71 100%);
+        background-size: 200% 100%;
+        animation: animate-shine 1.5s linear infinite;
+    }
+    #progress.animated-progress::-moz-progress-bar{
+        background-color: #2ecc71;
+        background-image: linear-gradient(90deg, #2ecc71 0%, #2ecc71 20%, rgba(255, 255, 255, 0.5) 50%, #2ecc71 80%, #2ecc71 100%);
+        background-size: 200% 100%;
+        animation: animate-shine 1.5s linear infinite;
+    }
+    @keyframes animate-shine{
+        from{background-position:100% 0;}
+        to{background-position:-100% 0;}
+    }
     #log{background:#0b0f13;border:1px solid #22272b;border-radius:10px;padding:12px;color:#c1ccd6;max-height:320px;overflow:auto;}
     .line{padding:8px;border-radius:8px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px;}
-    .left{flex:1;word-break:break-word;}
+    .left{flex:1;word-break:break-word;display:flex;flex-direction:column;}
     .meta{font-size:12px;color:#93a3af;}
     .ok{background:linear-gradient(90deg, rgba(46,204,113,0.06), transparent);color:#2ecc71}
     .cc{background:linear-gradient(90deg, rgba(26,188,156,0.06), transparent);color:#1abc9c}
@@ -121,7 +140,7 @@
     <input id="fileInput" type="file" webkitdirectory directory multiple style="display:none" />
 
     <div class="row">
-      <button id="scanBtn" class="primary">1. Mods Scannen (Worker)</button>
+      <button id="scanBtn" class="primary">1. Mods Scannen</button>
       <button id="zipBtn" class="secondary" disabled>2. Ausgewählte Typen als ZIP packen</button>
       <button id="zipBrokenBtn" class="danger" disabled>3. BROKEN als ZIP packen</button>
       <button id="resetBtn" class="secondary">Zurücksetzen</button>
@@ -174,7 +193,6 @@
         renderer.setClearColor(0x000000, 0);
 
         const coneGeometry = new THREE.ConeGeometry(0.7, 1.5, 6);
-        // Ersetzen Sie das transparente Material durch ein opakes, glänzendes Material
         const material = new THREE.MeshStandardMaterial({
             color: 0x2ecc71,
             roughness: 0.1,
@@ -196,7 +214,6 @@
         
         scene.add(plumbob);
 
-        // Lights adjusted to create more sparkling highlights
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); 
         scene.add(ambientLight);
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -333,12 +350,24 @@
       } else {
           div.className = 'line';
       }
+
       div.dataset.path = (entry.relPath||'').toLowerCase();
       div.dataset.status = entry.status;
       div.dataset.type = entry.type;
 
-      const left = document.createElement('div'); left.className='left';
-      left.innerHTML = `<strong>${escapeHtml(entry.relPath)}</strong><div class="meta">${entry.type?entry.type+' • ':''}${formatBytes(entry.size)} ${entry.sha1? '• '+entry.sha1.slice(0,12):''} ${entry.reason? '• '+entry.reason : ''}</div>`;
+      const left = document.createElement('div'); 
+      left.className='left';
+
+      // Pfad aufteilen
+      const lastSlashIndex = entry.relPath.lastIndexOf('/');
+      const directoryPath = lastSlashIndex !== -1 ? entry.relPath.substring(0, lastSlashIndex + 1) : '';
+      const fileName = lastSlashIndex !== -1 ? entry.relPath.substring(lastSlashIndex + 1) : entry.relPath;
+
+      const metaHtml = `<div class="meta">${escapeHtml(directoryPath)}</div>`;
+      const fileNameHtml = `<strong>${escapeHtml(fileName)}</strong>`;
+      const metaInfoHtml = `<div class="meta">${entry.type?entry.type+' • ':''}${formatBytes(entry.size)} ${entry.sha1? '• '+entry.sha1.slice(0,12):''} ${entry.reason? '• '+entry.reason : ''}</div>`;
+
+      left.innerHTML = `${metaHtml}${fileNameHtml}${metaInfoHtml}`;
 
       const right = document.createElement('div'); right.className='meta';
       if (entry.status === 'OK') {
@@ -410,6 +439,7 @@
       // reset
       report = []; shaMap = {}; log.innerHTML='Das Protokoll wird hier angezeigt...'; progress.style.display='block'; progress.value=0; startTime = Date.now(); updateStats(); refreshTopList();
       zipBrokenBtn.disabled = true;
+      progress.classList.add('animated-progress'); // Animation starten
 
       // prepare workers
       const workerPool = [];
@@ -449,12 +479,14 @@
           const w = idle.shift();
           const f = files[idx++];
           const rel = f.webkitRelativePath || f.name;
+
           const id = ++nextId;
           pending.set(id, {fileName:rel});
           w.postMessage({id, relPath: rel, file: f});
         }
         if(completed === files.length){
           workerPool.forEach(w=>w.terminate());
+          progress.classList.remove('animated-progress'); // Animation stoppen
           progress.style.display='none';
           const totalSec = Math.round((Date.now()-startTime)/1000);
           statTime.textContent = totalSec + 's';
