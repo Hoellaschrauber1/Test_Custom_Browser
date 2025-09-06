@@ -270,34 +270,66 @@
     // --- Worker-Pool Setup ---
     const WORKER_CODE = `
       self.importScripts('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js');
-      async function readFirstBytes(file, len=4){
-        try{ const buf = await file.slice(0,len).arrayBuffer(); return new Uint8Array(buf); }catch(e){ return null; }
+
+      // Globaler Fehler-Handler für den Worker
+      self.onerror = function(e) {
+          console.error('Worker-Fehler:', e);
+          postMessage({ id: -1, error: e.message || 'Unbekannter Fehler im Worker' });
+      };
+
+      async function computeSHA1(file) { 
+          try { 
+              const buf = await file.arrayBuffer(); 
+              const hash = await crypto.subtle.digest('SHA-1', buf); 
+              return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join(''); 
+          } catch(e) { 
+              console.error('SHA-1 Berechnung fehlgeschlagen:', e);
+              return null; 
+          } 
       }
-      async function computeSHA1(file){ try{ const buf = await file.arrayBuffer(); const hash = await crypto.subtle.digest('SHA-1', buf); return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join(''); }catch(e){ return null; } }
-      async function testZip(file){ try{ const buf = await file.arrayBuffer(); await JSZip.loadAsync(buf); return true; }catch(e){ return false; } }
+      
+      async function testZip(file) { 
+          try { 
+              const buf = await file.arrayBuffer(); 
+              await JSZip.loadAsync(buf); 
+              return true; 
+          } catch(e) { 
+              return false; 
+          } 
+      }
+
       self.onmessage = async (ev) => {
         const {id, relPath, file} = ev.data;
-        const buffer = await file.arrayBuffer(); // Dateibuffer sofort lesen
-        try{
-          if(file.size === 0){ postMessage({id, result:{relPath,status:'BROKEN',reason:'0-Byte',size:0,sha1:null}}); return; }
+        try {
+          const buffer = await file.arrayBuffer(); 
+          if(file.size === 0){ 
+              postMessage({id, result:{relPath, status:'BROKEN', reason:'0-Byte-Datei', size:0, sha1:null, buffer}});
+              return; 
+          }
           const ext = (file.name.split('.').pop()||'').toLowerCase();
-          if(!['package','ts4script','zip'].includes(ext)){ postMessage({id, result:{relPath,status:'SKIPPED',reason:'nicht unterstützt',size:file.size,sha1:null}}); return; }
+          if(!['package','ts4script','zip'].includes(ext)){ 
+              postMessage({id, result:{relPath, status:'SKIPPED', reason:'Nicht unterstützt', size:file.size, sha1:null, buffer}});
+              return; 
+          }
           if(ext === 'package'){
             const b = new Uint8Array(buffer,0,4);
             const ok = b && b[0]==0x44 && b[1]==0x42 && b[2]==0x50 && b[3]==0x46;
             const sha1 = await computeSHA1(file);
-            if(ok) postMessage({id, result:{relPath,status:'OK',type:'CC',size:file.size,sha1,buffer}},[buffer]);
-            else postMessage({id, result:{relPath,status:'BROKEN',reason:'keine DBPF-Signatur',size:file.size,sha1,buffer}},[buffer]);
+            if(ok) postMessage({id, result:{relPath, status:'OK', type:'CC', size:file.size, sha1, buffer}},[buffer]);
+            else postMessage({id, result:{relPath, status:'BROKEN', reason:'Keine DBPF-Signatur', size:file.size, sha1, buffer}},[buffer]);
             return;
           }
           if(ext==='zip' || ext==='ts4script'){
             const valid = await testZip(file);
             const sha1 = await computeSHA1(file);
-            if(valid) postMessage({id, result:{relPath,status:'OK',type: ext==='ts4script'?'Script':'ZIP',size:file.size,sha1,buffer}},[buffer]);
-            else postMessage({id, result:{relPath,status:'BROKEN',reason:'Ungültiges ZIP',size:file.size,sha1,buffer}},[buffer]);
+            if(valid) postMessage({id, result:{relPath, status:'OK', type: ext==='ts4script'?'Script':'ZIP', size:file.size, sha1, buffer}},[buffer]);
+            else postMessage({id, result:{relPath, status:'BROKEN', reason:'Ungültiges ZIP-Format', size:file.size, sha1, buffer}},[buffer]);
             return;
           }
-        }catch(e){ postMessage({id, result:{relPath,status:'BROKEN',reason:'Fehler',size:file.size,sha1:null,buffer}},[buffer]); }
+        } catch(e) { 
+            console.error('Worker-Verarbeitungsfehler:', e);
+            postMessage({id, result:{relPath, status:'BROKEN', reason:'Fehler: ' + (e.message || 'Unbekannt'), size:file.size, sha1:null, buffer: null}});
+        }
       };
     `;
 
@@ -441,7 +473,7 @@
       report = []; shaMap = {}; log.innerHTML='Das Protokoll wird hier angezeigt...'; progress.style.display='block'; progress.value=0; startTime = Date.now(); updateStats(); refreshTopList();
       zipBtn.disabled = true;
       zipBrokenBtn.disabled = true;
-      progress.classList.add('animated-progress'); // Animation starten
+      progress.classList.add('animated-progress'); 
 
       // prepare workers
       const workerPool = [];
@@ -453,9 +485,17 @@
       for(let i=0;i<WORKER_COUNT;i++){
         const w = createWorker(workerBlobs[i]);
         w.onmessage = (ev)=>{
-          const {id, result} = ev.data;
+          const {id, result, error} = ev.data;
+          if(error) {
+              console.error(`Worker-Fehler: ${error}`);
+              showMessage(`Ein Worker ist abgestürzt. Scan wird fortgesetzt.`);
+              // Bei einem fatalen Worker-Fehler müssen wir ihn neu starten, um den Pool voll zu halten
+              workerPool[workerPool.indexOf(w)] = createWorker(workerBlobs[i]);
+              return;
+          }
           const resolveData = pending.get(id);
           if(resolveData){
+            clearTimeout(resolveData.timeoutId);
             pending.delete(id);
             handleResult(result);
             idle.push(w);
@@ -479,14 +519,25 @@
           const w = idle.shift();
           const f = files[idx++];
           const rel = f.webkitRelativePath || f.name;
-
           const id = ++nextId;
-          pending.set(id, {fileName:rel});
+
+          const timeoutId = setTimeout(() => {
+              // Markiere die Datei als BROKEN, wenn das Timeout abgelaufen ist
+              if(pending.has(id)) {
+                  console.warn(`Timeout beim Scannen von: ${rel}`);
+                  pending.delete(id);
+                  handleResult({relPath: rel, status: 'BROKEN', reason: 'Timeout beim Scannen', size: f.size, sha1: null, buffer: null});
+                  idle.push(w); // Worker ist nicht wirklich abgestürzt, nur blockiert. Kann wiederverwendet werden.
+                  schedule();
+              }
+          }, 15000); // 15 Sekunden Timeout
+
+          pending.set(id, {fileName: rel, timeoutId});
           w.postMessage({id, relPath: rel, file: f});
         }
         if(completed === files.length){
           workerPool.forEach(w=>w.terminate());
-          progress.classList.remove('animated-progress'); // Animation stoppen
+          progress.classList.remove('animated-progress'); 
           progress.style.display='none';
           const totalSec = Math.round((Date.now()-startTime)/1000);
           statTime.textContent = totalSec + 's';
