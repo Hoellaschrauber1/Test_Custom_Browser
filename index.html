@@ -248,6 +248,9 @@
             transform: scale(1.15);
             border-color: white;
         }
+        .share-buttons-hidden .share-btn {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-zinc-900 text-white fortnite-font">
@@ -319,6 +322,15 @@
                                    <option value="en">English</option>
                                </select>
                            </div>
+                           <hr class="border-zinc-700 my-4">
+                           <label for="share-button-toggle" class="flex items-center justify-between gap-4 cursor-pointer text-lg">
+                                <span data-translate="settingsShowShareButton">Teilen-Button anzeigen</span>
+                                <div class="relative">
+                                    <input type="checkbox" id="share-button-toggle" class="sr-only peer">
+                                    <div class="block bg-zinc-600 w-14 h-8 rounded-full peer-checked:bg-green-500 transition"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-full peer-checked:bg-zinc-900"></div>
+                                </div>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -389,6 +401,7 @@
             const newBadgeDurationSelect = document.getElementById('new-badge-duration');
             const variantCycleSpeedSelect = document.getElementById('variant-cycle-speed');
             const languageSelect = document.getElementById('language-select');
+            const shareButtonToggle = document.getElementById('share-button-toggle');
 
             let allAssets = [];
             let filteredAssets = [];
@@ -399,9 +412,7 @@
             let debounceTimer;
             let lastAppliedFilterTypes = [];
             let lastAppliedShowOnlyNew = false;
-            let currentPlayingButton = null;
-            let variantCyclerObserver;
-
+            
             const translations = {
                 en: {
                     title: "FORTNITE ASSET EXPLORER",
@@ -421,6 +432,7 @@
                     settingsNewBadge: `"New" Badge For`,
                     settingsCycleSpeed: "Cycle Speed",
                     settingsLanguage: "Language",
+                    settingsShowShareButton: "Show Share Button",
                     linkCopied: "Link copied!",
                     typeOptions: { "outfit": "Outfits", "emote": "Emotes", "pickaxe": "Pickaxes", "glider": "Gliders", "backpack": "Back Blings", "wrap": "Wraps", "music": "Music", "loadingscreen": "Loading Screens" },
                     newBadgeOptions: { "3": "3 Days", "7": "7 Days", "14": "14 Days", "0": "Never Show" },
@@ -444,12 +456,19 @@
                     settingsNewBadge: `"Neu"-Anzeige für`,
                     settingsCycleSpeed: "Stilwechsel-Tempo",
                     settingsLanguage: "Sprache",
+                    settingsShowShareButton: "Teilen-Button anzeigen",
                     linkCopied: "Link kopiert!",
                     typeOptions: { "outfit": "Outfits", "emote": "Emotes", "pickaxe": "Spitzhacken", "glider": "Hängegleiter", "backpack": "Rücken-Accessoires", "wrap": "Lackierungen", "music": "Musik", "loadingscreen": "Ladebildschirme" },
                     newBadgeOptions: { "3": "3 Tage", "7": "7 Tage", "14": "14 Tage", "0": "Nie anzeigen" },
                     cycleSpeedOptions: { "1000": "1 Sekunde (Schnell)", "1500": "1.5 Sekunden (Normal)", "2500": "2.5 Sekunden (Langsam)" }
                 }
             };
+            
+            let currentPlayingButton = null;
+            let variantCyclerObserver;
+
+            let showShareButton = localStorage.getItem('showShareButton') !== 'false'; // default true
+            shareButtonToggle.checked = showShareButton;
 
             let currentLanguage = localStorage.getItem('language') || 'de';
             languageSelect.value = currentLanguage;
@@ -503,6 +522,14 @@
                     variantCycleSpeedSelect.innerHTML += `<option value="${value}">${label}</option>`;
                 });
                 variantCycleSpeedSelect.value = variantCycleSpeed;
+            };
+
+            const updateShareButtonVisibility = () => {
+                if (showShareButton) {
+                    document.body.classList.remove('share-buttons-hidden');
+                } else {
+                    document.body.classList.add('share-buttons-hidden');
+                }
             };
 
             const lazyImageObserver = new IntersectionObserver((entries, observer) => {
@@ -961,6 +988,12 @@
                 loader.style.display = 'none';
             });
 
+            shareButtonToggle.addEventListener('change', () => {
+                showShareButton = shareButtonToggle.checked;
+                localStorage.setItem('showShareButton', showShareButton);
+                updateShareButtonVisibility();
+            });
+
             variantCyclerObserver = new IntersectionObserver((entries, observer) => {
                 entries.forEach(entry => {
                     const container = entry.target;
@@ -990,6 +1023,7 @@
 
             const initialLoad = async () => {
                 updateUIText(currentLanguage);
+                updateShareButtonVisibility();
                 loader.style.display = 'flex';
                 await fetchAllAssets();
                 applyFilters();
