@@ -169,7 +169,7 @@
             background-color: #f8f800;
         }
 
-        .play-music-btn {
+        .play-music-btn, .share-btn {
             font-family: sans-serif;
             line-height: 1;
         }
@@ -204,6 +204,10 @@
             opacity: 1;
             transform: translateY(0);
             pointer-events: auto;
+        }
+        
+        #toast-notification {
+            transition: opacity 0.5s, transform 0.5s;
         }
     </style>
 </head>
@@ -242,7 +246,7 @@
     <!-- Filter Modal -->
     <div id="filter-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex justify-center items-center modal-backdrop opacity-0">
         <div class="bg-zinc-900 p-8 rounded-lg w-full max-w-2xl border-2 border-zinc-700 modal-content transform scale-95">
-            <h2 class="text-3xl uppercase mb-6 text-center">Shop Filtern</h2>
+            <h2 class="text-3xl uppercase mb-6 text-center">Filtern</h2>
             <div id="type-filter-container" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
                 <!-- Checkboxen werden hier eingefügt -->
             </div>
@@ -263,6 +267,10 @@
     <button id="scrollToTopBtn" class="fixed bottom-8 right-8 bg-yellow-400 text-black w-14 h-14 rounded-full flex items-center justify-center text-3xl z-30 hover:bg-yellow-300 shadow-lg">
         &uarr;
     </button>
+    
+    <div id="toast-notification" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg opacity-0 transform translate-y-4">
+        Link kopiert!
+    </div>
     
     <audio id="audio-player" class="hidden"></audio>
 
@@ -285,6 +293,7 @@
             const sentinel = document.getElementById('sentinel');
             const audioPlayer = document.getElementById('audio-player');
             const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+            const toast = document.getElementById('toast-notification');
 
             let allAssets = [];
             let filteredAssets = [];
@@ -358,8 +367,15 @@
                     
                     let musicPlayerButton = '';
                     if (item.type?.value === 'music' && item.preview?.url) {
-                        musicPlayerButton = `<button class="play-music-btn absolute bottom-3 right-3 bg-black/60 text-white w-10 h-10 rounded-full flex items-center justify-center text-2xl hover:bg-yellow-300 hover:text-black transition-colors z-10" data-audio-src="${item.preview.url}">▶</button>`;
+                        musicPlayerButton = `<button class="play-music-btn absolute bottom-3 right-12 bg-black/60 text-white w-10 h-10 rounded-full flex items-center justify-center text-2xl hover:bg-yellow-300 hover:text-black transition-colors z-10" data-audio-src="${item.preview.url}">▶</button>`;
                     }
+
+                    const shareButton = `<button class="share-btn absolute bottom-3 right-3 bg-black/60 text-white w-8 h-8 rounded-full flex items-center justify-center text-lg hover:bg-yellow-300 hover:text-black transition-colors z-10" data-item-id="${item.id}" title="Teilen">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                          <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
+                          <path d="M6.586 4.672A3 3 0 0 0 2.343 8.914l1.828 1.829a3 3 0 0 0 4.243 0L12.414 7.5a1 1 0 0 0 .154-.199 2 2 0 0 1-.861-3.337l1.414-1.414a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 0 0-4.243-4.243z"/>
+                        </svg>
+                    </button>`;
 
                     let newBadge = '';
                     if (isNew(item)) {
@@ -374,6 +390,7 @@
                             ${newBadge}
                             <img data-src="${imageUrl}" data-background="${item.images.background || ''}" class="lazy w-full h-full object-contain opacity-0 transition-opacity duration-500" alt="${item.name}">
                             ${musicPlayerButton}
+                            ${shareButton}
                         </div>
                         <div class="p-3 text-left flex-grow flex flex-col justify-end">
                             <h3 class="text-xl font-bold uppercase truncate">${item.name}</h3>
@@ -540,6 +557,16 @@
                     const json = await response.json();
                     if (!json || !json.data) throw new Error("Invalid cosmetics API data.");
                     allAssets = json.data.filter(item => item.name && (item.images.featured || item.images.icon));
+                    
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const itemIdToFind = urlParams.get('itemId');
+                    if (itemIdToFind) {
+                        const foundItem = allAssets.find(item => item.id === itemIdToFind);
+                        if (foundItem) {
+                            searchInput.value = foundItem.name;
+                        }
+                    }
+                    
                     applyFilters();
                 } catch (error) {
                     console.error('Error fetching all assets:', error);
@@ -584,26 +611,45 @@
                 closeModalHandler();
             });
 
-            // Music Player Logic
+            // Card Click Logic
             itemGrid.addEventListener('click', (e) => {
                 const playButton = e.target.closest('.play-music-btn');
-                if (!playButton) return;
+                const shareButton = e.target.closest('.share-btn');
 
-                e.stopPropagation();
-                const audioSrc = playButton.dataset.audioSrc;
-
-                if (currentPlayingButton === playButton) {
-                    audioPlayer.pause();
-                    playButton.innerHTML = '▶';
-                    currentPlayingButton = null;
-                } else {
-                    if (currentPlayingButton) {
-                        currentPlayingButton.innerHTML = '▶';
+                if (playButton) {
+                    e.stopPropagation();
+                    const audioSrc = playButton.dataset.audioSrc;
+                    if (currentPlayingButton === playButton) {
+                        audioPlayer.pause();
+                        playButton.innerHTML = '▶';
+                        currentPlayingButton = null;
+                    } else {
+                        if (currentPlayingButton) {
+                            currentPlayingButton.innerHTML = '▶';
+                        }
+                        audioPlayer.src = audioSrc;
+                        audioPlayer.play();
+                        playButton.innerHTML = '■';
+                        currentPlayingButton = playButton;
                     }
-                    audioPlayer.src = audioSrc;
-                    audioPlayer.play();
-                    playButton.innerHTML = '■';
-                    currentPlayingButton = playButton;
+                } else if (shareButton) {
+                    e.stopPropagation();
+                    const itemId = shareButton.dataset.itemId;
+                    const shareUrl = `${window.location.origin}${window.location.pathname}?itemId=${itemId}`;
+                    
+                    // Use a temporary textarea to copy to clipboard
+                    const tempInput = document.createElement('textarea');
+                    tempInput.value = shareUrl;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+                    
+                    // Show toast notification
+                    toast.classList.remove('opacity-0', 'translate-y-4');
+                    setTimeout(() => {
+                       toast.classList.add('opacity-0', 'translate-y-4');
+                    }, 2000);
                 }
             });
 
