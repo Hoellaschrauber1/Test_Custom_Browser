@@ -122,6 +122,14 @@
             transform: scale(1.03);
             box-shadow: 0 0 15px 3px rgba(200, 220, 255, 0.8);
         }
+        .fn-card .card-action {
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+        .fn-card:hover .card-action {
+            opacity: 1;
+        }
+
 
         /* Modal Styles */
         .modal-backdrop {
@@ -169,7 +177,7 @@
             background-color: #f8f800;
         }
 
-        .play-music-btn, .share-btn {
+        .play-music-btn {
             font-family: sans-serif;
             line-height: 1;
         }
@@ -271,7 +279,7 @@
     <div id="toast-notification" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg opacity-0 transform translate-y-4">
         Link kopiert!
     </div>
-    
+        
     <audio id="audio-player" class="hidden"></audio>
 
     <script>
@@ -367,13 +375,12 @@
                     
                     let musicPlayerButton = '';
                     if (item.type?.value === 'music' && item.preview?.url) {
-                        musicPlayerButton = `<button class="play-music-btn absolute bottom-3 right-12 bg-black/60 text-white w-10 h-10 rounded-full flex items-center justify-center text-2xl hover:bg-yellow-300 hover:text-black transition-colors z-10" data-audio-src="${item.preview.url}">▶</button>`;
+                        musicPlayerButton = `<button class="play-music-btn card-action absolute bottom-3 right-3 bg-black/60 text-white w-10 h-10 rounded-full flex items-center justify-center text-2xl hover:bg-yellow-300 hover:text-black transition-colors z-10" data-audio-src="${item.preview.url}">▶</button>`;
                     }
 
-                    const shareButton = `<button class="share-btn absolute bottom-3 right-3 bg-black/60 text-white w-8 h-8 rounded-full flex items-center justify-center text-lg hover:bg-yellow-300 hover:text-black transition-colors z-10" data-item-id="${item.id}" title="Teilen">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                          <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1.002 1.002 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4.018 4.018 0 0 1-.128-1.287z"/>
-                          <path d="M6.586 4.672A3 3 0 0 0 2.343 8.914l1.828 1.829a3 3 0 0 0 4.243 0L12.414 7.5a1 1 0 0 0 .154-.199 2 2 0 0 1-.861-3.337l1.414-1.414a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 0 0-4.243-4.243z"/>
+                    const shareButton = `<button class="share-btn card-action absolute bottom-3 right-3 bg-black/60 text-white w-8 h-8 rounded-full flex items-center justify-center text-lg hover:bg-yellow-300 hover:text-black transition-colors z-10" data-item-id="${item.id}" title="Teilen">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-share-fill" viewBox="0 0 16 16">
+                          <path d="M11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5"/>
                         </svg>
                     </button>`;
 
@@ -390,11 +397,11 @@
                             ${newBadge}
                             <img data-src="${imageUrl}" data-background="${item.images.background || ''}" class="lazy w-full h-full object-contain opacity-0 transition-opacity duration-500" alt="${item.name}">
                             ${musicPlayerButton}
-                            ${shareButton}
                         </div>
-                        <div class="p-3 text-left flex-grow flex flex-col justify-end">
+                        <div class="relative p-3 text-left flex-grow flex flex-col justify-end">
                             <h3 class="text-xl font-bold uppercase truncate">${item.name}</h3>
                             <p class="text-sm opacity-80 capitalize">${item.type?.displayValue || ''}</p>
+                            ${shareButton}
                         </div>`;
                     fragment.appendChild(card);
                     lazyImageObserver.observe(card.querySelector('.lazy'));
@@ -566,7 +573,7 @@
                             searchInput.value = foundItem.name;
                         }
                     }
-                    
+
                     applyFilters();
                 } catch (error) {
                     console.error('Error fetching all assets:', error);
@@ -615,7 +622,7 @@
             itemGrid.addEventListener('click', (e) => {
                 const playButton = e.target.closest('.play-music-btn');
                 const shareButton = e.target.closest('.share-btn');
-
+                
                 if (playButton) {
                     e.stopPropagation();
                     const audioSrc = playButton.dataset.audioSrc;
@@ -637,7 +644,6 @@
                     const itemId = shareButton.dataset.itemId;
                     const shareUrl = `${window.location.origin}${window.location.pathname}?itemId=${itemId}`;
                     
-                    // Use a temporary textarea to copy to clipboard
                     const tempInput = document.createElement('textarea');
                     tempInput.value = shareUrl;
                     document.body.appendChild(tempInput);
@@ -645,7 +651,6 @@
                     document.execCommand('copy');
                     document.body.removeChild(tempInput);
                     
-                    // Show toast notification
                     toast.classList.remove('opacity-0', 'translate-y-4');
                     setTimeout(() => {
                        toast.classList.add('opacity-0', 'translate-y-4');
