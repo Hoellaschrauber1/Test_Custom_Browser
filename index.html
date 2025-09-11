@@ -217,6 +217,26 @@
         #toast-notification {
             transition: opacity 0.5s, transform 0.5s;
         }
+
+        /* Variant Image Styles */
+        .variant-image-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        .variant-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: opacity 0.7s ease-in-out;
+            opacity: 0;
+        }
+        .variant-image.active {
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-zinc-900 text-white fortnite-font">
@@ -238,9 +258,26 @@
                     <button id="tab-all" class="fn-button active px-5 py-1 rounded-md text-base">Alle Assets</button>
                     <button id="tab-shop" class="fn-button px-5 py-1 rounded-md text-base">Item-Shop</button>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
                     <input type="text" id="search-input" placeholder="Suchen..." class="bg-zinc-800 border-2 border-zinc-700 rounded-md px-4 py-2 w-full md:w-64 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-300 transition-colors">
                     <button id="filter-button" class="fn-button px-6 py-2 rounded-md text-lg">Filter</button>
+                    <div class="relative">
+                        <button id="settings-button" class="fn-button p-3 rounded-md text-lg flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413-1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.858 2.929 2.929 0 0 1 0 5.858z"/>
+                            </svg>
+                        </button>
+                        <div id="settings-menu" class="hidden absolute top-full right-0 mt-2 bg-zinc-800 border-2 border-zinc-700 rounded-lg p-4 z-50 w-64">
+                            <label for="variant-cycle-toggle" class="flex items-center justify-between gap-4 cursor-pointer text-lg">
+                                <span>Auto-Stilwechsel</span>
+                                <div class="relative">
+                                    <input type="checkbox" id="variant-cycle-toggle" class="sr-only peer">
+                                    <div class="block bg-zinc-600 w-14 h-8 rounded-full peer-checked:bg-yellow-500 transition"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-full peer-checked:bg-zinc-900"></div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div id="item-count" class="text-center text-zinc-400 mt-4 text-lg"></div>
@@ -302,6 +339,9 @@
             const audioPlayer = document.getElementById('audio-player');
             const scrollToTopBtn = document.getElementById('scrollToTopBtn');
             const toast = document.getElementById('toast-notification');
+            const settingsButton = document.getElementById('settings-button');
+            const settingsMenu = document.getElementById('settings-menu');
+            const variantCycleToggle = document.getElementById('variant-cycle-toggle');
 
             let allAssets = [];
             let filteredAssets = [];
@@ -313,6 +353,9 @@
             let lastAppliedFilterTypes = [];
             let lastAppliedShowOnlyNew = false;
             let currentPlayingButton = null;
+            let variantCyclerObserver;
+            let autoCycleVariants = localStorage.getItem('autoCycleVariants') === 'true';
+            variantCycleToggle.checked = autoCycleVariants;
             
             const typeOptions = {
                 "outfit": "Outfits", "emote": "Emotes", "pickaxe": "Spitzhacken",
@@ -342,12 +385,14 @@
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         const lazyImage = entry.target;
-                        const imageContainer = lazyImage.parentElement;
+                        const imageContainer = lazyImage.closest('.shimmer-bg');
                         lazyImage.onload = () => {
                             lazyImage.classList.remove('opacity-0');
-                            imageContainer.classList.remove('shimmer-bg');
-                             if(lazyImage.dataset.background) {
-                                imageContainer.style.backgroundImage = `url('${lazyImage.dataset.background}')`;
+                            if(imageContainer) {
+                                imageContainer.classList.remove('shimmer-bg');
+                                if(lazyImage.dataset.background) {
+                                   imageContainer.style.backgroundImage = `url('${lazyImage.dataset.background}')`;
+                               }
                             }
                         };
                         lazyImage.src = lazyImage.dataset.src;
@@ -368,8 +413,11 @@
                 const fragment = document.createDocumentFragment();
                 items.forEach((item, index) => {
                     const imageUrl = item.images.featured || item.images.icon || item.images.smallIcon;
-                    if (!imageUrl) return;
+                    const variantImages = item.variants?.flatMap(v => v.options?.map(o => o.image)).filter(Boolean) || [];
 
+                    if (!imageUrl && variantImages.length === 0) return;
+
+                    const hasVariants = variantImages.length > 0;
                     const rarity = item.rarity?.value || 'common';
                     const rarityClass = rarityClasses[rarity] || 'border-rarity-common';
                     
@@ -388,6 +436,19 @@
                     if (isNew(item)) {
                         newBadge = `<div class="new-badge">Neu</div>`;
                     }
+                    
+                    let imageContent = '';
+                    if (hasVariants) {
+                        const allImages = [imageUrl, ...variantImages];
+                        imageContent = `<div class="variant-image-container">`;
+                        allImages.forEach((src, i) => {
+                            imageContent += `<img data-src="${src}" class="lazy variant-image ${i === 0 ? 'active' : ''}" alt="${item.name} Style ${i + 1}">`;
+                        });
+                        imageContent += `</div>`;
+                    } else {
+                        imageContent = `<img data-src="${imageUrl}" data-background="${item.images.background || ''}" class="lazy w-full h-full object-contain opacity-0 transition-opacity duration-500" alt="${item.name}">`;
+                    }
+
 
                     const card = document.createElement('div');
                     card.className = `fn-card ${rarityClass} flex flex-col`;
@@ -395,7 +456,7 @@
                     card.innerHTML = `
                         <div class="relative aspect-square w-full bg-cover bg-center shimmer-bg">
                             ${newBadge}
-                            <img data-src="${imageUrl}" data-background="${item.images.background || ''}" class="lazy w-full h-full object-contain opacity-0 transition-opacity duration-500" alt="${item.name}">
+                            ${imageContent}
                             ${musicPlayerButton}
                         </div>
                         <div class="relative p-3 text-left flex-grow flex flex-col justify-end">
@@ -404,7 +465,13 @@
                             ${shareButton}
                         </div>`;
                     fragment.appendChild(card);
-                    lazyImageObserver.observe(card.querySelector('.lazy'));
+                    
+                    card.querySelectorAll('.lazy').forEach(img => lazyImageObserver.observe(img));
+
+                    if (hasVariants) {
+                        const variantContainer = card.querySelector('.variant-image-container');
+                        if (variantContainer) variantCyclerObserver.observe(variantContainer);
+                    }
                 });
                 return fragment;
             };
@@ -678,9 +745,75 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
 
+            const handleVariantCyclingUpdate = () => {
+                document.querySelectorAll('.variant-image-container').forEach(container => {
+                    let intervalId = parseInt(container.dataset.intervalId, 10);
+                    if (intervalId) {
+                        clearInterval(intervalId);
+                        container.dataset.intervalId = '';
+                    }
+
+                    if (!autoCycleVariants) {
+                        const images = container.querySelectorAll('.variant-image');
+                        if (images.length > 0) {
+                            images.forEach(img => img.classList.remove('active'));
+                            images[0].classList.add('active');
+                        }
+                    }
+                    
+                    variantCyclerObserver.unobserve(container);
+                    variantCyclerObserver.observe(container);
+                });
+            };
+
+            settingsButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                settingsMenu.classList.toggle('hidden');
+            });
+
+            variantCycleToggle.addEventListener('change', () => {
+                autoCycleVariants = variantCycleToggle.checked;
+                localStorage.setItem('autoCycleVariants', autoCycleVariants);
+                handleVariantCyclingUpdate();
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!settingsMenu.classList.contains('hidden') && !settingsMenu.contains(e.target) && e.target !== settingsButton) {
+                    settingsMenu.classList.add('hidden');
+                }
+            });
+
+            variantCyclerObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    const container = entry.target;
+                    let intervalId = parseInt(container.dataset.intervalId, 10);
+
+                    if (entry.isIntersecting) {
+                        if (autoCycleVariants && !intervalId) {
+                            const images = container.querySelectorAll('.variant-image');
+                            if (images.length > 1) {
+                                let currentIndex = 0;
+                                intervalId = setInterval(() => {
+                                    images[currentIndex].classList.remove('active');
+                                    currentIndex = (currentIndex + 1) % images.length;
+                                    images[currentIndex].classList.add('active');
+                                }, 1500); // 1.5 seconds per style
+                                container.dataset.intervalId = intervalId;
+                            }
+                        }
+                    } else {
+                        if (intervalId) {
+                            clearInterval(intervalId);
+                            container.dataset.intervalId = ''; 
+                        }
+                    }
+                });
+            });
+
             fetchAllAssets();
         });
     </script>
 </body>
 </html>
+
 
