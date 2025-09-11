@@ -251,6 +251,9 @@
         .share-buttons-hidden .share-btn {
             display: none;
         }
+        .no-scroll {
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="bg-zinc-900 text-white fortnite-font">
@@ -291,6 +294,15 @@
                                 </div>
                             </label>
                             <hr class="border-zinc-700 my-4">
+                            <label for="share-button-toggle" class="flex items-center justify-between gap-4 cursor-pointer text-lg">
+                                <span data-translate="settingsShowShareButton">Teilen-Button anzeigen</span>
+                                <div class="relative">
+                                    <input type="checkbox" id="share-button-toggle" class="sr-only peer">
+                                    <div class="block bg-zinc-600 w-14 h-8 rounded-full peer-checked:bg-green-500 transition"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-full peer-checked:bg-zinc-900"></div>
+                                </div>
+                            </label>
+                            <hr class="border-zinc-700 my-4">
                             <div class="space-y-2">
                                 <span class="text-lg" data-translate="settingsAccentColor">Akzentfarbe</span>
                                 <div id="color-picker" class="flex justify-between gap-3 pt-1">
@@ -322,15 +334,6 @@
                                    <option value="en">English</option>
                                </select>
                            </div>
-                           <hr class="border-zinc-700 my-4">
-                           <label for="share-button-toggle" class="flex items-center justify-between gap-4 cursor-pointer text-lg">
-                                <span data-translate="settingsShowShareButton">Teilen-Button anzeigen</span>
-                                <div class="relative">
-                                    <input type="checkbox" id="share-button-toggle" class="sr-only peer">
-                                    <div class="block bg-zinc-600 w-14 h-8 rounded-full peer-checked:bg-green-500 transition"></div>
-                                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-full peer-checked:bg-zinc-900"></div>
-                                </div>
-                            </label>
                         </div>
                     </div>
                 </div>
@@ -919,6 +922,7 @@
             settingsButton.addEventListener('click', (e) => {
                 e.stopPropagation();
                 settingsMenu.classList.toggle('hidden');
+                document.body.classList.toggle('no-scroll', !settingsMenu.classList.contains('hidden'));
             });
 
             variantCycleToggle.addEventListener('change', () => {
@@ -930,6 +934,7 @@
             document.addEventListener('click', (e) => {
                 if (!settingsMenu.classList.contains('hidden') && !settingsMenu.contains(e.target) && e.target !== settingsButton) {
                     settingsMenu.classList.add('hidden');
+                    document.body.classList.remove('no-scroll');
                 }
             });
 
