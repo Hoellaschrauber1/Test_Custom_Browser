@@ -9,6 +9,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Burbank+Big+Condensed:wght@700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --accent-color: #f8f800; /* Standard Fortnite Gelb */
+        }
+
         html {
             scroll-behavior: smooth;
         }
@@ -28,7 +32,7 @@
         ::-webkit-scrollbar { width: 10px; }
         ::-webkit-scrollbar-track { background: #0b173a; }
         ::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 5px; }
-        ::-webkit-scrollbar-thumb:hover { background: #f8f800; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
 
         .border-rarity-legendary { border-top: 5px solid #e58800; }
         .border-rarity-epic { border-top: 5px solid #8c3eff; }
@@ -100,11 +104,11 @@
             text-transform: uppercase;
         }
         .fn-button:hover, .fn-button.active {
-            background-color: #f8f800;
+            background-color: var(--accent-color);
             color: #121212;
-            border-color: #f8f800;
+            border-color: var(--accent-color);
             transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(248, 248, 0, 0.5);
+            box-shadow: 0 0 15px color-mix(in srgb, var(--accent-color) 50%, transparent);
         }
         
         .fn-card {
@@ -149,8 +153,8 @@
             outline: none;
         }
         .fn-checkbox:checked {
-            background-color: #f8f800;
-            border-color: #f8f800;
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
         }
         .fn-checkbox:checked::after {
             content: '✓';
@@ -174,7 +178,7 @@
              transition: all 0.2s ease-in-out;
         }
         #sidebar-nav a:hover div {
-            background-color: #f8f800;
+            background-color: var(--accent-color);
         }
 
         .play-music-btn {
@@ -186,7 +190,7 @@
             position: absolute;
             top: 10px;
             left: 10px;
-            background-color: #f8f800;
+            background-color: var(--accent-color);
             color: #121212;
             padding: 2px 10px;
             border-radius: 5px;
@@ -197,9 +201,9 @@
         }
 
         @keyframes pulse-badge {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248, 248, 0, 0.7); }
-            50% { transform: scale(1.05); box-shadow: 0 0 10px 5px rgba(248, 248, 0, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248, 248, 0, 0); }
+            0% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-color) 70%, transparent); }
+            50% { transform: scale(1.05); box-shadow: 0 0 10px 5px color-mix(in srgb, var(--accent-color) 0%, transparent); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-color) 0%, transparent); }
         }
 
         #scrollToTopBtn {
@@ -237,6 +241,13 @@
         .variant-image.active {
             opacity: 1;
         }
+        .color-swatch {
+            transition: all 0.2s ease-in-out;
+        }
+        .color-swatch.selected {
+            transform: scale(1.15);
+            border-color: white;
+        }
     </style>
 </head>
 <body class="bg-zinc-900 text-white fortnite-font">
@@ -264,18 +275,38 @@
                     <div class="relative">
                         <button id="settings-button" class="fn-button p-3 rounded-md text-lg flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413-1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.858 2.929 2.929 0 0 1 0 5.858z"/>
+                                <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c-1.4-.413-1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.858 2.929 2.929 0 0 1 0 5.858z"/>
                             </svg>
                         </button>
-                        <div id="settings-menu" class="hidden absolute top-full right-0 mt-2 bg-zinc-800 border-2 border-zinc-700 rounded-lg p-4 z-50 w-64">
+                        <div id="settings-menu" class="hidden absolute top-full right-0 mt-2 bg-zinc-800 border-2 border-zinc-700 rounded-lg p-4 z-50 w-72">
                             <label for="variant-cycle-toggle" class="flex items-center justify-between gap-4 cursor-pointer text-lg">
                                 <span>Auto-Stilwechsel</span>
                                 <div class="relative">
                                     <input type="checkbox" id="variant-cycle-toggle" class="sr-only peer">
-                                    <div class="block bg-zinc-600 w-14 h-8 rounded-full peer-checked:bg-yellow-500 transition"></div>
+                                    <div class="block bg-zinc-600 w-14 h-8 rounded-full peer-checked:bg-green-500 transition"></div>
                                     <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-full peer-checked:bg-zinc-900"></div>
                                 </div>
                             </label>
+                            <hr class="border-zinc-700 my-4">
+                            <div class="space-y-2">
+                                <span class="text-lg">Akzentfarbe</span>
+                                <div id="color-picker" class="flex justify-between gap-3 pt-1">
+                                    <button class="color-swatch w-10 h-10 rounded-full border-2 border-transparent" style="background-color: #f8f800;" data-color="#f8f800" title="Fortnite Gelb"></button>
+                                    <button class="color-swatch w-10 h-10 rounded-full border-2 border-transparent" style="background-color: #0076c2;" data-color="#0076c2" title="Selten Blau"></button>
+                                    <button class="color-swatch w-10 h-10 rounded-full border-2 border-transparent" style="background-color: #8c3eff;" data-color="#8c3eff" title="Episch Lila"></button>
+                                    <button class="color-swatch w-10 h-10 rounded-full border-2 border-transparent" style="background-color: #e58800;" data-color="#e58800" title="Legendär Orange"></button>
+                                </div>
+                            </div>
+                            <hr class="border-zinc-700 my-4">
+                             <div class="space-y-2">
+                                <label for="new-badge-duration" class="text-lg">"Neu"-Anzeige für</label>
+                                <select id="new-badge-duration" class="w-full bg-zinc-700 border border-zinc-600 rounded-md p-2 focus:outline-none focus:border-yellow-300">
+                                    <option value="3">3 Tage</option>
+                                    <option value="7">7 Tage</option>
+                                    <option value="14">14 Tage</option>
+                                    <option value="0">Nie anzeigen</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -342,6 +373,8 @@
             const settingsButton = document.getElementById('settings-button');
             const settingsMenu = document.getElementById('settings-menu');
             const variantCycleToggle = document.getElementById('variant-cycle-toggle');
+            const colorPicker = document.getElementById('color-picker');
+            const newBadgeDurationSelect = document.getElementById('new-badge-duration');
 
             let allAssets = [];
             let filteredAssets = [];
@@ -354,8 +387,12 @@
             let lastAppliedShowOnlyNew = false;
             let currentPlayingButton = null;
             let variantCyclerObserver;
+
             let autoCycleVariants = localStorage.getItem('autoCycleVariants') === 'true';
             variantCycleToggle.checked = autoCycleVariants;
+
+            let newBadgeDuration = parseInt(localStorage.getItem('newBadgeDuration') || '7', 10);
+            newBadgeDurationSelect.value = newBadgeDuration;
             
             const typeOptions = {
                 "outfit": "Outfits", "emote": "Emotes", "pickaxe": "Spitzhacken",
@@ -402,11 +439,12 @@
             });
 
             const isNew = (item) => {
-                if (!item.added) return false;
-                const sevenDaysAgo = new Date();
-                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                if (newBadgeDuration === 0 || !item.added) return false;
+                const durationDays = newBadgeDuration;
+                const xDaysAgo = new Date();
+                xDaysAgo.setDate(xDaysAgo.getDate() - durationDays);
                 const itemAddedDate = new Date(item.added);
-                return itemAddedDate >= sevenDaysAgo;
+                return itemAddedDate >= xDaysAgo;
             };
 
             const renderCards = (items, existingCardCount = 0) => {
@@ -783,6 +821,33 @@
                 }
             });
 
+            const applyAccentColor = (color) => {
+                document.documentElement.style.setProperty('--accent-color', color);
+                const a = document.querySelector('.fn-button.active');
+                if(a) a.style.boxShadow = `0 0 15px color-mix(in srgb, ${color} 50%, transparent)`;
+                document.querySelectorAll('.color-swatch').forEach(swatch => {
+                    swatch.classList.toggle('selected', swatch.dataset.color === color);
+                });
+            };
+
+            const savedColor = localStorage.getItem('accentColor') || '#f8f800';
+            applyAccentColor(savedColor);
+
+            colorPicker.addEventListener('click', (e) => {
+                const swatch = e.target.closest('.color-swatch');
+                if (swatch) {
+                    const newColor = swatch.dataset.color;
+                    localStorage.setItem('accentColor', newColor);
+                    applyAccentColor(newColor);
+                }
+            });
+
+            newBadgeDurationSelect.addEventListener('change', () => {
+                newBadgeDuration = parseInt(newBadgeDurationSelect.value, 10);
+                localStorage.setItem('newBadgeDuration', newBadgeDuration);
+                applyFilters();
+            });
+
             variantCyclerObserver = new IntersectionObserver((entries, observer) => {
                 entries.forEach(entry => {
                     const container = entry.target;
@@ -815,5 +880,4 @@
     </script>
 </body>
 </html>
-
 
