@@ -254,6 +254,9 @@
         .no-scroll {
             overflow: hidden;
         }
+        #shop-countdown-container.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-zinc-900 text-white fortnite-font">
@@ -303,6 +306,15 @@
                                 </div>
                             </label>
                             <hr class="border-zinc-700 my-4">
+                            <label for="shop-countdown-toggle" class="flex items-center justify-between gap-4 cursor-pointer text-lg">
+                                <span data-translate="settingsShowCountdownAlways">Countdown immer anzeigen</span>
+                                <div class="relative">
+                                    <input type="checkbox" id="shop-countdown-toggle" class="sr-only peer">
+                                    <div class="block bg-zinc-600 w-14 h-8 rounded-full peer-checked:bg-green-500 transition"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-full peer-checked:bg-zinc-900"></div>
+                                </div>
+                            </label>
+                            <hr class="border-zinc-700 my-4">
                             <div class="space-y-2">
                                 <span class="text-lg" data-translate="settingsAccentColor">Akzentfarbe</span>
                                 <div id="color-picker" class="flex justify-between gap-3 pt-1">
@@ -338,7 +350,13 @@
                     </div>
                 </div>
             </div>
-            <div id="item-count" class="text-center text-zinc-400 mt-4 text-lg"></div>
+            <div id="item-count-wrapper" class="text-center text-zinc-400 mt-4 text-lg flex justify-center items-center gap-4">
+                <span id="item-count"></span>
+                <div id="shop-countdown-container" class="hidden">
+                    <span data-translate="countdownLabel">Shop wechselt in:</span>
+                    <span id="shop-countdown" class="font-bold text-white"></span>
+                </div>
+            </div>
         </div>
 
         <div id="loader" class="flex justify-center items-center py-20"><div class="loader"></div></div>
@@ -405,6 +423,10 @@
             const variantCycleSpeedSelect = document.getElementById('variant-cycle-speed');
             const languageSelect = document.getElementById('language-select');
             const shareButtonToggle = document.getElementById('share-button-toggle');
+            const shopCountdownToggle = document.getElementById('shop-countdown-toggle');
+            const shopCountdownContainer = document.getElementById('shop-countdown-container');
+            const shopCountdown = document.getElementById('shop-countdown');
+
 
             let allAssets = [];
             let filteredAssets = [];
@@ -415,6 +437,7 @@
             let debounceTimer;
             let lastAppliedFilterTypes = [];
             let lastAppliedShowOnlyNew = false;
+            let countdownInterval = null;
             
             const translations = {
                 en: {
@@ -436,6 +459,8 @@
                     settingsCycleSpeed: "Cycle Speed",
                     settingsLanguage: "Language",
                     settingsShowShareButton: "Show Share Button",
+                    settingsShowCountdownAlways: "Always show countdown",
+                    countdownLabel: "Shop resets in:",
                     linkCopied: "Link copied!",
                     typeOptions: { "outfit": "Outfits", "emote": "Emotes", "pickaxe": "Pickaxes", "glider": "Gliders", "backpack": "Back Blings", "wrap": "Wraps", "music": "Music", "loadingscreen": "Loading Screens" },
                     newBadgeOptions: { "3": "3 Days", "7": "7 Days", "14": "14 Days", "0": "Never Show" },
@@ -460,6 +485,8 @@
                     settingsCycleSpeed: "Stilwechsel-Tempo",
                     settingsLanguage: "Sprache",
                     settingsShowShareButton: "Teilen-Button anzeigen",
+                    settingsShowCountdownAlways: "Countdown immer anzeigen",
+                    countdownLabel: "Shop wechselt in:",
                     linkCopied: "Link kopiert!",
                     typeOptions: { "outfit": "Outfits", "emote": "Emotes", "pickaxe": "Spitzhacken", "glider": "Hängegleiter", "backpack": "Rücken-Accessoires", "wrap": "Lackierungen", "music": "Musik", "loadingscreen": "Ladebildschirme" },
                     newBadgeOptions: { "3": "3 Tage", "7": "7 Tage", "14": "14 Tage", "0": "Nie anzeigen" },
@@ -472,6 +499,9 @@
 
             let showShareButton = localStorage.getItem('showShareButton') !== 'false'; // default true
             shareButtonToggle.checked = showShareButton;
+            
+            let showShopCountdownAlways = localStorage.getItem('showShopCountdownAlways') === 'true'; // default false
+            shopCountdownToggle.checked = showShopCountdownAlways;
 
             let currentLanguage = localStorage.getItem('language') || 'de';
             languageSelect.value = currentLanguage;
@@ -498,7 +528,7 @@
 
                 document.querySelectorAll('[data-translate]').forEach(el => {
                     const key = el.dataset.translate;
-                    if (t[key]) el.textContent = t[key];
+                    if (t[key] && typeof t[key] === 'string') el.textContent = t[key];
                 });
                 
                 searchInput.placeholder = t.searchPlaceholder;
@@ -525,6 +555,33 @@
                     variantCycleSpeedSelect.innerHTML += `<option value="${value}">${label}</option>`;
                 });
                 variantCycleSpeedSelect.value = variantCycleSpeed;
+            };
+            
+            const startShopCountdown = () => {
+                if (countdownInterval) clearInterval(countdownInterval);
+                
+                const shouldShow = currentView === 'shop' || showShopCountdownAlways;
+
+                if (!shouldShow) {
+                    shopCountdownContainer.classList.add('hidden');
+                    return;
+                }
+                shopCountdownContainer.classList.remove('hidden');
+
+                countdownInterval = setInterval(() => {
+                    const now = new Date();
+                    const nextReset = new Date(now);
+                    nextReset.setUTCHours(24, 0, 0, 0);
+
+                    const diff = nextReset - now;
+
+                    const hours = Math.floor(diff / (1000 * 60 * 60));
+                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                    shopCountdown.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                }, 1000);
             };
 
             const updateShareButtonVisibility = () => {
@@ -749,6 +806,7 @@
                 });
                 if(newItemsFilter) newItemsFilter.checked = false;
                 itemGrid.innerHTML = '';
+                startShopCountdown();
                 
                 if (view === 'all') {
                     tabAll.classList.add('active');
@@ -805,7 +863,7 @@
             
             const fetchShopData = async () => {
                  try {
-                    const response = await fetch(`https://fortnite-api.com/v2/shop/br?language=${currentLanguage}`);
+                    const response = await fetch(`https://fortnite-api.com/v2/shop/br/combined?language=${currentLanguage}`);
                     if (!response.ok) throw new Error(`API Error: ${response.status}`);
                     const json = await response.json();
                     if (!json || !json.data) throw new Error("Invalid shop API data.");
@@ -999,6 +1057,12 @@
                 updateShareButtonVisibility();
             });
 
+            shopCountdownToggle.addEventListener('change', () => {
+                showShopCountdownAlways = shopCountdownToggle.checked;
+                localStorage.setItem('showShopCountdownAlways', showShopCountdownAlways);
+                startShopCountdown();
+            });
+
             variantCyclerObserver = new IntersectionObserver((entries, observer) => {
                 entries.forEach(entry => {
                     const container = entry.target;
@@ -1029,6 +1093,7 @@
             const initialLoad = async () => {
                 updateUIText(currentLanguage);
                 updateShareButtonVisibility();
+                startShopCountdown();
                 loader.style.display = 'flex';
                 await fetchAllAssets();
                 applyFilters();
