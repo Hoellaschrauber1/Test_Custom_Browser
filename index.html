@@ -168,6 +168,31 @@
         #sidebar-nav a:hover div {
             background-color: #f8f800;
         }
+
+        .play-music-btn {
+            font-family: sans-serif;
+            line-height: 1;
+        }
+
+        .new-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: #f8f800;
+            color: #121212;
+            padding: 2px 10px;
+            border-radius: 5px;
+            font-size: 1rem;
+            text-transform: uppercase;
+            z-index: 10;
+            animation: pulse-badge 2s infinite;
+        }
+
+        @keyframes pulse-badge {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248, 248, 0, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 10px 5px rgba(248, 248, 0, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248, 248, 0, 0); }
+        }
     </style>
 </head>
 <body class="bg-zinc-900 text-white fortnite-font">
@@ -209,12 +234,21 @@
             <div id="type-filter-container" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
                 <!-- Checkboxen werden hier eingefügt -->
             </div>
+            <hr class="border-zinc-700 my-6">
+            <div class="flex justify-center mb-8">
+                 <label class="flex items-center gap-3 cursor-pointer text-lg">
+                    <input type="checkbox" id="new-items-filter" class="fn-checkbox">
+                    <span>Nur neue Gegenstände anzeigen</span>
+                </label>
+            </div>
             <div class="flex justify-center gap-4">
                  <button id="apply-filters" class="fn-button bg-yellow-400 text-black border-yellow-400 hover:bg-yellow-300 px-8 py-3 text-xl">Anwenden</button>
                  <button id="close-modal" class="fn-button bg-zinc-700 hover:bg-zinc-600 px-8 py-3 text-xl">Schließen</button>
             </div>
         </div>
     </div>
+    
+    <audio id="audio-player" class="hidden"></audio>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -229,9 +263,11 @@
             const closeModal = document.getElementById('close-modal');
             const applyFiltersBtn = document.getElementById('apply-filters');
             const typeFilterContainer = document.getElementById('type-filter-container');
+            const newItemsFilter = document.getElementById('new-items-filter');
             const sidebarNav = document.getElementById('sidebar-nav');
             const sidebarLinks = document.getElementById('sidebar-links');
             const sentinel = document.getElementById('sentinel');
+            const audioPlayer = document.getElementById('audio-player');
 
             let allAssets = [];
             let filteredAssets = [];
@@ -241,6 +277,8 @@
             let currentView = 'all';
             let debounceTimer;
             let lastAppliedFilterTypes = [];
+            let lastAppliedShowOnlyNew = false;
+            let currentPlayingButton = null;
             
             const typeOptions = {
                 "outfit": "Outfits", "emote": "Emotes", "pickaxe": "Spitzhacken",
@@ -284,6 +322,14 @@
                 });
             });
 
+            const isNew = (item) => {
+                if (!item.added) return false;
+                const sevenDaysAgo = new Date();
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                const itemAddedDate = new Date(item.added);
+                return itemAddedDate >= sevenDaysAgo;
+            };
+
             const renderCards = (items, existingCardCount = 0) => {
                 const fragment = document.createDocumentFragment();
                 items.forEach((item, index) => {
@@ -292,16 +338,30 @@
 
                     const rarity = item.rarity?.value || 'common';
                     const rarityClass = rarityClasses[rarity] || 'border-rarity-common';
+                    
                     let vbucksPrice = '';
                     if (currentView === 'shop' && item.price) {
                         vbucksPrice = `<div class="flex items-center gap-1 mt-1"><img src="https://fortnite-api.com/images/vbucks.png" alt="V-Bucks" class="w-5 h-5"><span class="text-lg font-bold">${item.price}</span></div>`;
                     }
+                    
+                    let musicPlayerButton = '';
+                    if (item.type?.value === 'music' && item.preview?.url) {
+                        musicPlayerButton = `<button class="play-music-btn absolute bottom-3 right-3 bg-black/60 text-white w-10 h-10 rounded-full flex items-center justify-center text-2xl hover:bg-yellow-300 hover:text-black transition-colors z-10" data-audio-src="${item.preview.url}">▶</button>`;
+                    }
+
+                    let newBadge = '';
+                    if (isNew(item)) {
+                        newBadge = `<div class="new-badge">Neu</div>`;
+                    }
+
                     const card = document.createElement('div');
                     card.className = `fn-card ${rarityClass} flex flex-col`;
                     card.style.animationDelay = `${(existingCardCount + index) * 30}ms`;
                     card.innerHTML = `
                         <div class="relative aspect-square w-full bg-cover bg-center shimmer-bg">
+                            ${newBadge}
                             <img data-src="${imageUrl}" data-background="${item.images.background || ''}" class="lazy w-full h-full object-contain opacity-0 transition-opacity duration-500" alt="${item.name}">
+                            ${musicPlayerButton}
                         </div>
                         <div class="p-3 text-left flex-grow flex flex-col justify-end">
                             <h3 class="text-xl font-bold uppercase truncate">${item.name}</h3>
@@ -369,17 +429,19 @@
             infiniteScrollObserver.observe(sentinel);
 
             const applyFilters = () => {
-                const searchTerm = searchInput.value.toLowerCase();
+                const searchTerm = searchInput.value.toLowerCase().trim();
                 const selectedTypes = lastAppliedFilterTypes;
+                const showOnlyNew = lastAppliedShowOnlyNew;
 
                 if (currentView === 'all') {
                     itemGrid.innerHTML = '';
                     itemGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5';
                     
                     filteredAssets = allAssets.filter(item => {
-                        const nameMatch = item.name.toLowerCase().includes(searchTerm);
                         const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(item.type?.value);
-                        return nameMatch && typeMatch;
+                        const nameMatch = item.name.toLowerCase().includes(searchTerm);
+                        const newMatch = !showOnlyNew || isNew(item);
+                        return typeMatch && nameMatch && newMatch;
                     });
                     
                     currentlyDisplayedItems = 0;
@@ -392,10 +454,23 @@
                         .concat(shopData.daily?.entries ? [{...shopData.daily, id: 'daily'}] : [])
                         .concat(shopData.specialFeatured?.entries ? [{...shopData.specialFeatured, id: 'specialFeatured'}] : [])
                         .forEach(section => {
-                            const entries = section.entries.flatMap(entry => entry.items);
-                            const nameMatch = !searchTerm || entries.some(item => item.name.toLowerCase().includes(searchTerm));
-                            const typeMatch = selectedTypes.length === 0 || entries.some(item => selectedTypes.includes(item.type?.value));
-                            if (nameMatch && typeMatch) filteredSections.push(section);
+                            const filteredEntries = section.entries.map(entry => {
+                                const filteredItems = entry.items.filter(item => {
+                                    const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(item.type?.value);
+                                    const nameMatch = item.name.toLowerCase().includes(searchTerm);
+                                    const newMatch = !showOnlyNew || isNew(item);
+                                    return typeMatch && nameMatch && newMatch;
+                                });
+
+                                if (filteredItems.length > 0) {
+                                    return { ...entry, items: filteredItems };
+                                }
+                                return null;
+                            }).filter(Boolean);
+
+                            if (filteredEntries.length > 0) {
+                                filteredSections.push({ ...section, entries: filteredEntries });
+                            }
                         });
                     renderShopSections(filteredSections);
                     document.querySelectorAll('[id^=section-]').forEach(sec => sectionObserver.observe(sec));
@@ -411,7 +486,9 @@
                 currentView = view;
                 searchInput.value = '';
                 lastAppliedFilterTypes = [];
+                lastAppliedShowOnlyNew = false;
                 document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = false);
+                newItemsFilter.checked = false;
                 itemGrid.innerHTML = '';
                 
                 if (view === 'all') {
@@ -476,6 +553,7 @@
             });
             const closeModalHandler = () => {
                  document.querySelectorAll('.filter-checkbox').forEach(cb => { cb.checked = lastAppliedFilterTypes.includes(cb.value); });
+                 newItemsFilter.checked = lastAppliedShowOnlyNew;
                  filterModal.classList.add('opacity-0');
                  filterModal.querySelector('.modal-content').classList.add('scale-95');
                  setTimeout(() => filterModal.classList.add('hidden'), 300);
@@ -483,8 +561,39 @@
             closeModal.addEventListener('click', closeModalHandler);
             applyFiltersBtn.addEventListener('click', () => {
                 lastAppliedFilterTypes = Array.from(document.querySelectorAll('.filter-checkbox:checked')).map(cb => cb.value);
+                lastAppliedShowOnlyNew = newItemsFilter.checked;
                 applyFilters();
                 closeModalHandler();
+            });
+
+            // Music Player Logic
+            itemGrid.addEventListener('click', (e) => {
+                const playButton = e.target.closest('.play-music-btn');
+                if (!playButton) return;
+
+                e.stopPropagation();
+                const audioSrc = playButton.dataset.audioSrc;
+
+                if (currentPlayingButton === playButton) {
+                    audioPlayer.pause();
+                    playButton.innerHTML = '▶';
+                    currentPlayingButton = null;
+                } else {
+                    if (currentPlayingButton) {
+                        currentPlayingButton.innerHTML = '▶';
+                    }
+                    audioPlayer.src = audioSrc;
+                    audioPlayer.play();
+                    playButton.innerHTML = '■';
+                    currentPlayingButton = playButton;
+                }
+            });
+
+            audioPlayer.addEventListener('ended', () => {
+                if (currentPlayingButton) {
+                    currentPlayingButton.innerHTML = '▶';
+                    currentPlayingButton = null;
+                }
             });
 
             fetchAllAssets();
