@@ -174,9 +174,10 @@
             padding: 8px;
             background-color: rgba(0,0,0,0.5);
             overflow: hidden; /* Hide the text when collapsed */
+            max-height: 80vh; /* NEU: Maximale Höhe, damit es nicht den ganzen Bildschirm einnimmt */
         }
         #sidebar-nav:hover {
-            width: 240px; /* Expanded width - WAR ZU BREIT */
+            width: 240px; /* Expanded width */
             border-radius: 12px; /* rounded-lg */
             background-color: rgba(15, 23, 42, 0.9);
             padding: 16px;
@@ -186,7 +187,17 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            height: 100%; /* NEU: Füllt den Container aus */
+            overflow-y: auto; /* NEU: Scrollen aktivieren, wenn nötig */
+            overflow-x: hidden; /* NEU: Horizontale Scrollbar ausblenden */
+            padding-right: 4px; /* NEU: Platz für die Scrollbar */
         }
+
+        /* NEU: Eigene Scrollbar für die Sidebar */
+        #sidebar-links::-webkit-scrollbar { width: 6px; }
+        #sidebar-links::-webkit-scrollbar-track { background: transparent; }
+        #sidebar-links::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 3px; }
+        #sidebar-links::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
 
         #sidebar-links .sidebar-link {
             display: flex;
@@ -201,6 +212,16 @@
             text-decoration: none;
             color: #d1d5db; /* gray-300 */
         }
+
+        /* NEU: Text nur einblenden, wenn die Sidebar ausgeklappt ist */
+        #sidebar-links .sidebar-link .link-text {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        #sidebar-nav:hover .sidebar-link .link-text {
+            opacity: 1;
+        }
+
         #sidebar-links .sidebar-link:hover {
             background-color: rgba(255, 255, 255, 0.1);
             color: white;
@@ -1259,4 +1280,5 @@
     </script>
 </body>
 </html>
+
 
