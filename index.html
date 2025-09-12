@@ -169,40 +169,31 @@
         /* Sidebar Nav */
         #sidebar-nav {
             transition: width 0.3s ease, background-color 0.3s ease, padding 0.3s ease;
-            width: 40px; /* Smaller collapsed bar for mobile */
+            width: 48px; /* Width of the collapsed bar */
             border-radius: 9999px; /* rounded-full */
-            padding: 6px;
+            padding: 8px;
             background-color: rgba(0,0,0,0.5);
             overflow: hidden; /* Hide the text when collapsed */
-            max-height: 75vh; /* Max height for mobile */
+            max-height: 80vh; /* NEU: Maximale Höhe, damit es nicht den ganzen Bildschirm einnimmt */
         }
-
-        @media (min-width: 768px) { /* md breakpoint */
-            #sidebar-nav {
-                width: 48px;
-                padding: 8px;
-                max-height: 80vh;
-            }
-             #sidebar-nav:hover {
-                width: 240px; /* Expanded width */
-                border-radius: 12px; /* rounded-lg */
-                background-color: rgba(15, 23, 42, 0.9);
-                padding: 16px;
-            }
+        #sidebar-nav:hover {
+            width: 240px; /* Expanded width */
+            border-radius: 12px; /* rounded-lg */
+            background-color: rgba(15, 23, 42, 0.9);
+            padding: 16px;
         }
-
 
         #sidebar-links {
             display: flex;
             flex-direction: column;
             gap: 8px;
-            height: 100%; /* Füllt den Container aus */
-            overflow-y: auto; /* Scrollen aktivieren, wenn nötig */
-            overflow-x: hidden; /* Horizontale Scrollbar ausblenden */
-            padding-right: 4px; /* Platz für die Scrollbar */
+            height: 100%; /* NEU: Füllt den Container aus */
+            overflow-y: auto; /* NEU: Scrollen aktivieren, wenn nötig */
+            overflow-x: hidden; /* NEU: Horizontale Scrollbar ausblenden */
+            padding-right: 4px; /* NEU: Platz für die Scrollbar */
         }
 
-        /* Eigene Scrollbar für die Sidebar */
+        /* NEU: Eigene Scrollbar für die Sidebar */
         #sidebar-links::-webkit-scrollbar { width: 6px; }
         #sidebar-links::-webkit-scrollbar-track { background: transparent; }
         #sidebar-links::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 3px; }
@@ -222,18 +213,14 @@
             color: #d1d5db; /* gray-300 */
         }
 
-        /* Text nur einblenden, wenn die Sidebar ausgeklappt ist */
+        /* NEU: Text nur einblenden, wenn die Sidebar ausgeklappt ist */
         #sidebar-links .sidebar-link .link-text {
             opacity: 0;
             transition: opacity 0.2s ease;
         }
-        
-        @media (min-width: 768px) {
-            #sidebar-nav:hover .sidebar-link .link-text {
-                opacity: 1;
-            }
+        #sidebar-nav:hover .sidebar-link .link-text {
+            opacity: 1;
         }
-
 
         #sidebar-links .sidebar-link:hover {
             background-color: rgba(255, 255, 255, 0.1);
@@ -242,20 +229,12 @@
 
         #sidebar-links .sidebar-link .dot {
             flex-shrink: 0;
-            width: 10px; /* Smaller dot for mobile */
-            height: 10px;
+            width: 12px;
+            height: 12px;
             background-color: #9ca3af; /* gray-400 */
             border-radius: 9999px;
             transition: all 0.2s ease-in-out;
         }
-
-        @media (min-width: 768px) {
-             #sidebar-links .sidebar-link .dot {
-                width: 12px;
-                height: 12px;
-            }
-        }
-
         #sidebar-links .sidebar-link:hover .dot {
             background-color: var(--accent-color);
         }
@@ -349,27 +328,27 @@
 <body class="bg-zinc-900 text-white fortnite-font">
 
     <!-- Sidebar Navigation -->
-    <nav id="sidebar-nav" class="hidden fixed top-1/2 -translate-y-1/2 left-2 md:left-4 z-20 opacity-0">
-        <div id="sidebar-links" class="items-center">
+    <nav id="sidebar-nav" class="hidden fixed top-1/2 -translate-y-1/2 left-4 z-20 bg-black/50 p-2 rounded-full opacity-0">
+        <div id="sidebar-links" class="flex flex-col gap-3 items-center">
             <!-- Links werden hier dynamisch eingefügt -->
         </div>
     </nav>
 
-    <div class="container mx-auto p-2 sm:p-4 md:p-8">
-        <div class="sticky top-0 bg-black/50 backdrop-blur-sm z-10 py-2 mb-4 md:py-4 md:mb-6 rounded-xl">
-            <div class="flex flex-col md:flex-row gap-4 justify-between items-center px-2 sm:px-4">
-                <div class="text-center md:text-left">
-                    <h1 class="text-xl md:text-2xl font-bold text-yellow-300 drop-shadow-lg" data-translate="title">FORTNITE ASSET EXPLORER</h1>
+    <div class="container mx-auto p-4 md:p-8">
+        <div class="sticky top-0 bg-black/50 backdrop-blur-sm z-10 py-4 mb-6 rounded-xl">
+            <div class="flex flex-col md:flex-row gap-4 justify-between items-center px-4">
+                <div>
+                    <h1 class="text-2xl font-bold text-yellow-300 drop-shadow-lg" data-translate="title">FORTNITE ASSET EXPLORER</h1>
                 </div>
                 <div class="flex gap-3 p-1 bg-zinc-800 rounded-lg">
-                    <button id="tab-all" class="fn-button active px-4 py-1 rounded-md text-sm md:text-base" data-translate="tabAll">Alle Assets</button>
-                    <button id="tab-shop" class="fn-button px-4 py-1 rounded-md text-sm md:text-base" data-translate="tabShop">Item-Shop</button>
+                    <button id="tab-all" class="fn-button active px-5 py-1 rounded-md text-base" data-translate="tabAll">Alle Assets</button>
+                    <button id="tab-shop" class="fn-button px-5 py-1 rounded-md text-base" data-translate="tabShop">Item-Shop</button>
                 </div>
                 <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
                     <input type="text" id="search-input" placeholder="Suchen..." class="bg-zinc-800 border-2 border-zinc-700 rounded-md px-4 py-2 w-full md:w-64 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-300 transition-colors">
-                    <button id="filter-button" class="fn-button px-5 py-2 rounded-md text-base md:text-lg" data-translate="filterButton">Filter</button>
+                    <button id="filter-button" class="fn-button px-6 py-2 rounded-md text-lg" data-translate="filterButton">Filter</button>
                     <div class="relative">
-                        <button id="settings-button" class="fn-button p-3 rounded-md text-base md:text-lg flex items-center justify-center">
+                        <button id="settings-button" class="fn-button p-3 rounded-md text-lg flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c-1.4-.413-1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.858 2.929 2.929 0 0 1 0 5.858z"/>
                             </svg>
@@ -438,7 +417,7 @@
                     </div>
                 </div>
             </div>
-            <div id="item-count-wrapper" class="text-center text-zinc-400 mt-2 md:mt-4 text-sm md:text-lg flex justify-center items-center gap-4">
+            <div id="item-count-wrapper" class="text-center text-zinc-400 mt-4 text-lg flex justify-center items-center gap-4">
                 <span id="item-count"></span>
                 <div id="shop-countdown-container" class="hidden">
                     <span data-translate="countdownLabel">Shop wechselt in:</span>
@@ -454,26 +433,26 @@
 
     <!-- Filter Modal -->
     <div id="filter-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex justify-center items-center modal-backdrop opacity-0">
-        <div class="bg-zinc-900 p-6 md:p-8 rounded-lg w-full max-w-lg md:max-w-2xl border-2 border-zinc-700 modal-content transform scale-95">
-            <h2 class="text-2xl md:text-3xl uppercase mb-6 text-center" data-translate="filterTitle">Filtern</h2>
+        <div class="bg-zinc-900 p-8 rounded-lg w-full max-w-2xl border-2 border-zinc-700 modal-content transform scale-95">
+            <h2 class="text-3xl uppercase mb-6 text-center" data-translate="filterTitle">Filtern</h2>
             <div id="type-filter-container" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
                 <!-- Checkboxen werden hier eingefügt -->
             </div>
             <hr class="border-zinc-700 my-6">
             <div class="flex justify-center mb-8">
-                 <label class="flex items-center gap-3 cursor-pointer text-base md:text-lg">
+                 <label class="flex items-center gap-3 cursor-pointer text-lg">
                     <input type="checkbox" id="new-items-filter" class="fn-checkbox">
                     <span data-translate="filterNewOnly">Nur neue Gegenstände anzeigen</span>
                 </label>
             </div>
             <div class="flex justify-center gap-4">
-                 <button id="apply-filters" class="fn-button bg-yellow-400 text-black border-yellow-400 hover:bg-yellow-300 px-6 py-2 text-lg md:px-8 md:py-3 md:text-xl" data-translate="filterApply">Anwenden</button>
-                 <button id="close-modal" class="fn-button bg-zinc-700 hover:bg-zinc-600 px-6 py-2 text-lg md:px-8 md:py-3 md:text-xl" data-translate="filterClose">Schließen</button>
+                 <button id="apply-filters" class="fn-button bg-yellow-400 text-black border-yellow-400 hover:bg-yellow-300 px-8 py-3 text-xl" data-translate="filterApply">Anwenden</button>
+                 <button id="close-modal" class="fn-button bg-zinc-700 hover:bg-zinc-600 px-8 py-3 text-xl" data-translate="filterClose">Schließen</button>
             </div>
         </div>
     </div>
     
-    <button id="scrollToTopBtn" class="fixed bottom-4 right-4 md:bottom-8 md:right-8 bg-yellow-400 text-black w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-2xl md:text-3xl z-30 hover:bg-yellow-300 shadow-lg">
+    <button id="scrollToTopBtn" class="fixed bottom-8 right-8 bg-yellow-400 text-black w-14 h-14 rounded-full flex items-center justify-center text-3xl z-30 hover:bg-yellow-300 shadow-lg">
         &uarr;
     </button>
     
@@ -652,7 +631,7 @@
                 typeFilterContainer.innerHTML = '';
                 Object.entries(t.typeOptions).forEach(([value, label]) => {
                     typeFilterContainer.innerHTML += `
-                        <label class="flex items-center gap-3 cursor-pointer text-base md:text-lg">
+                        <label class="flex items-center gap-3 cursor-pointer text-lg">
                             <input type="checkbox" value="${value}" class="fn-checkbox filter-checkbox">
                             <span>${label}</span>
                         </label>
@@ -753,7 +732,7 @@
                         musicPlayerButton = `<button class="play-music-btn card-action absolute bottom-3 right-3 bg-black/60 text-white w-10 h-10 rounded-full flex items-center justify-center text-2xl hover:bg-yellow-300 hover:text-black transition-colors z-10" data-audio-src="${item.preview.url}">▶</button>`;
                     }
 
-                    const shareButton = `<button class="share-btn card-action absolute top-3 right-3 bg-black/60 text-white w-8 h-8 rounded-full flex items-center justify-center text-lg hover:bg-yellow-300 hover:text-black transition-colors z-10" data-item-id="${item.id}" title="Teilen">
+                    const shareButton = `<button class="share-btn card-action absolute bottom-3 right-3 bg-black/60 text-white w-8 h-8 rounded-full flex items-center justify-center text-lg hover:bg-yellow-300 hover:text-black transition-colors z-10" data-item-id="${item.id}" title="Teilen">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-share-fill" viewBox="0 0 16 16">
                           <path d="M11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5"/>
                         </svg>
@@ -776,16 +755,6 @@
                         imageContent = `<img data-src="${imageUrl}" data-background="${item.images.background || ''}" class="lazy w-full h-full object-contain opacity-0 transition-opacity duration-500" alt="${item.name}">`;
                     }
 
-                    let priceInfo = '';
-                    if (currentView === 'shop' && item.price) {
-                        priceInfo = `
-                            <div class="flex items-center">
-                                <img src="https://fortnite-api.com/images/vbuck.png" alt="V-Bucks" class="w-4 h-4 md:w-5 md:h-5 mr-1">
-                                <span class="font-bold text-base md:text-lg">${item.price.toLocaleString('de-DE')}</span>
-                            </div>
-                        `;
-                    }
-
 
                     const card = document.createElement('div');
                     card.className = `fn-card ${rarityClass} flex flex-col`;
@@ -795,14 +764,11 @@
                             ${newBadge}
                             ${imageContent}
                             ${musicPlayerButton}
-                            ${shareButton}
                         </div>
-                        <div class="relative p-2 md:p-3 text-left flex-grow flex flex-col justify-end">
-                            <h3 class="text-lg md:text-xl font-bold uppercase truncate">${item.name}</h3>
-                            <div class="flex justify-between items-center">
-                                <p class="text-xs md:text-sm opacity-80 capitalize">${item.type?.displayValue || ''}</p>
-                                ${priceInfo}
-                            </div>
+                        <div class="relative p-3 text-left flex-grow flex flex-col justify-end">
+                            <h3 class="text-xl font-bold uppercase truncate">${item.name}</h3>
+                            <p class="text-sm opacity-80 capitalize">${item.type?.displayValue || ''}</p>
+                            ${shareButton}
                         </div>`;
                     fragment.appendChild(card);
                     
@@ -828,14 +794,14 @@
                     sidebarLinks.innerHTML += `
                         <a href="#${sectionId}" data-section-id="${sectionId}" title="${sectionTitle}" class="sidebar-link">
                             <div class="dot"></div>
-                            <span class="link-text uppercase text-sm md:text-base">${sectionTitle}</span>
+                            <span class="link-text uppercase text-base">${sectionTitle}</span>
                         </a>
                     `;
                     
                     const sectionWrapper = document.createElement('div');
                     sectionWrapper.id = sectionId;
                     const title = document.createElement('h2');
-                    title.className = 'text-3xl md:text-4xl uppercase mb-4 mt-8';
+                    title.className = 'text-4xl uppercase mb-4 mt-8';
                     title.textContent = sectionTitle;
                     sectionWrapper.appendChild(title);
                     
@@ -843,7 +809,7 @@
                     totalItems += items.length;
 
                     const itemsGridForSection = document.createElement('div');
-                    itemsGridForSection.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5';
+                    itemsGridForSection.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5';
                     itemsGridForSection.appendChild(renderCards(items));
                     sectionWrapper.appendChild(itemsGridForSection);
                     
@@ -882,7 +848,7 @@
 
                 if (currentView === 'all') {
                     itemGrid.innerHTML = '';
-                    itemGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-5';
+                    itemGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5';
                     
                     filteredAssets = allAssets.filter(item => {
                         const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(item.type?.value);
@@ -1314,4 +1280,5 @@
     </script>
 </body>
 </html>
+
 
