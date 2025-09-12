@@ -238,13 +238,18 @@
         #sidebar-links .sidebar-link:hover .dot {
             background-color: var(--accent-color);
         }
-        #sidebar-links .sidebar-link.active .dot {
-            background-color: #ffffff;
-            transform: scale(1.5);
-        }
+        /* NEUE REGELN FÜR DEN AKTIVEN PUNKT */
         #sidebar-links .sidebar-link.active {
             background-color: rgba(255, 255, 255, 0.2);
             color: white;
+        }
+        #sidebar-links .sidebar-link.active .dot {
+            transform: scale(1.5);
+            background-color: #ffffff; /* Standard für aktiven Punkt ist weiß (für aufgeklappte Sidebar) */
+        }
+        /* Überschreiben mit Gelb, NUR wenn die Sidebar eingeklappt ist */
+        #sidebar-nav:not(:hover) .sidebar-link.active .dot {
+            background-color: var(--accent-color);
         }
 
         .play-music-btn {
@@ -338,17 +343,17 @@
         <div class="sticky top-0 bg-black/50 backdrop-blur-sm z-10 py-4 mb-6 rounded-xl">
             <div class="flex flex-col md:flex-row gap-4 justify-between items-center px-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-yellow-300 drop-shadow-lg" data-translate="title">FORTNITE ASSET EXPLORER</h1>
+                    <h1 class="text-xl md:text-2xl font-bold text-yellow-300 drop-shadow-lg" data-translate="title">FORTNITE ASSET EXPLORER</h1>
                 </div>
                 <div class="flex gap-3 p-1 bg-zinc-800 rounded-lg">
-                    <button id="tab-all" class="fn-button active px-5 py-1 rounded-md text-base" data-translate="tabAll">Alle Assets</button>
-                    <button id="tab-shop" class="fn-button px-5 py-1 rounded-md text-base" data-translate="tabShop">Item-Shop</button>
+                    <button id="tab-all" class="fn-button active px-3 md:px-5 py-1 rounded-md text-sm md:text-base" data-translate="tabAll">Alle Assets</button>
+                    <button id="tab-shop" class="fn-button px-3 md:px-5 py-1 rounded-md text-sm md:text-base" data-translate="tabShop">Item-Shop</button>
                 </div>
                 <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
                     <input type="text" id="search-input" placeholder="Suchen..." class="bg-zinc-800 border-2 border-zinc-700 rounded-md px-4 py-2 w-full md:w-64 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-300 transition-colors">
-                    <button id="filter-button" class="fn-button px-6 py-2 rounded-md text-lg" data-translate="filterButton">Filter</button>
+                    <button id="filter-button" class="fn-button px-4 md:px-6 py-2 rounded-md text-base md:text-lg" data-translate="filterButton">Filter</button>
                     <div class="relative">
-                        <button id="settings-button" class="fn-button p-3 rounded-md text-lg flex items-center justify-center">
+                        <button id="settings-button" class="fn-button p-2 md:p-3 rounded-md text-lg flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c-1.4-.413-1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.858 2.929 2.929 0 0 1 0 5.858z"/>
                             </svg>
@@ -417,7 +422,7 @@
                     </div>
                 </div>
             </div>
-            <div id="item-count-wrapper" class="text-center text-zinc-400 mt-4 text-lg flex justify-center items-center gap-4">
+            <div id="item-count-wrapper" class="text-center text-zinc-400 mt-4 text-base md:text-lg flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
                 <span id="item-count"></span>
                 <div id="shop-countdown-container" class="hidden">
                     <span data-translate="countdownLabel">Shop wechselt in:</span>
@@ -446,8 +451,8 @@
                 </label>
             </div>
             <div class="flex justify-center gap-4">
-                 <button id="apply-filters" class="fn-button bg-yellow-400 text-black border-yellow-400 hover:bg-yellow-300 px-8 py-3 text-xl" data-translate="filterApply">Anwenden</button>
-                 <button id="close-modal" class="fn-button bg-zinc-700 hover:bg-zinc-600 px-8 py-3 text-xl" data-translate="filterClose">Schließen</button>
+                 <button id="apply-filters" class="fn-button bg-yellow-400 text-black border-yellow-400 hover:bg-yellow-300 px-6 sm:px-8 py-2 sm:py-3 text-lg sm:text-xl" data-translate="filterApply">Anwenden</button>
+                 <button id="close-modal" class="fn-button bg-zinc-700 hover:bg-zinc-600 px-6 sm:px-8 py-2 sm:py-3 text-lg sm:text-xl" data-translate="filterClose">Schließen</button>
             </div>
         </div>
     </div>
@@ -801,7 +806,7 @@
                     const sectionWrapper = document.createElement('div');
                     sectionWrapper.id = sectionId;
                     const title = document.createElement('h2');
-                    title.className = 'text-4xl uppercase mb-4 mt-8';
+                    title.className = 'text-3xl md:text-4xl uppercase mb-4 mt-8';
                     title.textContent = sectionTitle;
                     sectionWrapper.appendChild(title);
                     
@@ -819,15 +824,28 @@
             };
 
             const sectionObserver = new IntersectionObserver((entries) => {
+                let topmostEntry = null;
+
+                // Find the entry that is intersecting and is closest to the top of the viewport
                 entries.forEach(entry => {
-                    const id = entry.target.getAttribute('id');
-                    const link = sidebarNav.querySelector(`a[data-section-id="${id}"]`);
-                    if (link && entry.isIntersecting) {
-                        sidebarNav.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-                        link.classList.add('active');
+                    if (entry.isIntersecting) {
+                        if (!topmostEntry || entry.boundingClientRect.top < topmostEntry.boundingClientRect.top) {
+                            topmostEntry = entry;
+                        }
                     }
                 });
-            }, { rootMargin: "-50% 0px -50% 0px" });
+                
+                if (topmostEntry) {
+                    sidebarNav.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+                    const linkToActivate = sidebarNav.querySelector(`a[data-section-id="${topmostEntry.target.id}"]`);
+                    if (linkToActivate) {
+                        linkToActivate.classList.add('active');
+                    }
+                }
+            }, { 
+                threshold: 0,
+                rootMargin: "-88px 0px -40% 0px" 
+            });
             
             const loadMoreItems = () => {
                 if (currentView !== 'all' || currentlyDisplayedItems >= filteredAssets.length) return;
@@ -1280,5 +1298,7 @@
     </script>
 </body>
 </html>
+
+
 
 
