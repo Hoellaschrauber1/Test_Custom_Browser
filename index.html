@@ -1786,7 +1786,7 @@
                 if (topSearchesData) {
                     topSearchesData.forEach(([term, count], index) => {
                         const item = document.createElement('div');
-                        item.className = 'p-2 rounded-lg bg-white/5 flex justify-between search-item-fall-in';
+                        item.className = 'p-2 rounded-lg bg-white/5 flex justify-between search-item-fall-in mb-2';
                         item.innerHTML = `<span>${term}</span> <b>${count}x</b>`;
                         item.style.animationDelay = `${index * 50}ms`;
                         topSearchesContainer.appendChild(item);
@@ -2062,6 +2062,7 @@
     </script>
 </body>
 </html>
+
 
 
 
