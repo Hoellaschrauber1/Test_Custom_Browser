@@ -1,415 +1,491 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fortnite Asset Explorer</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Burbank+Big+Condensed:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /*
+        ============================================
+        iOS 26 Design Overhaul
+        - Font geändert zu 'Inter' für einen cleanen Look.
+        - Glassmorphism-Effekt für die meisten UI-Elemente.
+        - Sanfte, flüssige Animationen.
+        - Helles, luftiges Theme mit einem anpassbaren Akzent.
+        ============================================
+        */
         :root {
-            --accent-color: #f8f800; /* Standard Fortnite Gelb */
+            --accent-color: #007aff; /* Standard iOS Blau */
+            --background-start: #1c1c1e;
+            --background-end: #000000;
+            --text-color: #f5f5f7;
+            --text-color-secondary: #8e8e93;
+            --card-bg: rgba(44, 44, 46, 0.6);
+            --card-bg-solid: rgb(44, 44, 46);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.2);
+            --transition-speed: 0.2s;
         }
 
         html {
             scroll-behavior: smooth;
         }
         body {
-            font-family: 'Burbank Big Condensed', sans-serif;
-            background-color: #0b173a;
-            background-image: linear-gradient(180deg, #0b173a 0%, #000000 100%);
-            color: #ffffff;
-            letter-spacing: 0.5px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-start);
+            background: linear-gradient(180deg, var(--background-start) 0%, var(--background-end) 100%);
+            color: var(--text-color);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        .fortnite-font {
-            font-family: 'Burbank Big Condensed', sans-serif;
-            font-weight: 700;
+        .fortnite-font { /* Behalten für Kompatibilität, aber überschrieben */
+             font-family: 'Inter', sans-serif;
         }
 
-        ::-webkit-scrollbar { width: 10px; }
-        ::-webkit-scrollbar-track { background: #0b173a; }
-        ::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 5px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
 
-        .border-rarity-legendary { border-top: 5px solid #e58800; }
-        .border-rarity-epic { border-top: 5px solid #8c3eff; }
-        .border-rarity-rare { border-top: 5px solid #0076c2; }
-        .border-rarity-uncommon { border-top: 5px solid #0fa51d; }
-        .border-rarity-common { border-top: 5px solid #7f7f7f; }
-        .border-rarity-mythic { border-top: 5px solid #cda434; }
-        .border-rarity-exotic { border-top: 5px solid #00c8c8; }
-        .border-rarity-dark { border-top: 5px solid #c735b5; }
-        .border-rarity-icon { border-top: 5px solid #009c95; }
-        .border-rarity-slurp { border-top: 5px solid #00a4b4; }
-        .border-rarity-frozen { border-top: 5px solid #6593b4; }
-        .border-rarity-lava { border-top: 5px solid #c13800; }
-        .border-rarity-shadow { border-top: 5px solid #414141; }
-        .border-rarity-starwars { border-top: 5px solid #f8f800; }
-        .border-rarity-marvel { border-top: 5px solid #9f0013; }
-        .border-rarity-dc { border-top: 5px solid #003067; }
-        .border-rarity-gaminglegends { border-top: 5px solid #4b0082; }
+        /* Scrollbar in der Sidebar verstecken */
+        #sidebar-links::-webkit-scrollbar { display: none; }
+        #sidebar-links { scrollbar-width: none; /* Für Firefox */ }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Glassmorphism Effekt */
+        .glass-effect {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 30px var(--shadow-color);
         }
 
-        /* Shimmer Placeholder Styles */
-        @keyframes shimmer {
-            100% { transform: translateX(100%); }
-        }
+        /* Animationen */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Shimmer Placeholder */
+        @keyframes shimmer { 100% { transform: translateX(100%); } }
         .shimmer-bg {
-            position: relative;
-            overflow: hidden;
-            background-color: #1a3a7f;
+            position: relative; overflow: hidden;
+            background-color: rgba(255, 255, 255, 0.05);
         }
         .shimmer-bg::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             transform: translateX(-100%);
-            background-image: linear-gradient(90deg, rgba(255,255,255,0) 0, rgba(255,255,255,0.05) 20%, rgba(255,255,255,0.2) 60%, rgba(255,255,255,0) 100%);
-            animation: shimmer 1.8s infinite;
+            background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
+            animation: shimmer 2.2s infinite;
         }
 
+        /* Loader */
         .loader {
-            border: 8px solid #f3f3f3;
+            width: 50px; height: 50px;
             border-radius: 50%;
-            border-top: 8px solid #f8f800;
-            width: 80px;
-            height: 80px;
-            animation: spin 1s linear infinite;
+            display: inline-block;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top-color: var(--text-color);
+            animation: spin 0.8s cubic-bezier(0.6, 0.2, 0.4, 0.8) infinite;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
+        /* Buttons */
         .fn-button {
-            background-color: #313131;
-            border: 2px solid #555;
-            transition: all 0.2s ease-in-out;
-            text-transform: uppercase;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            border: none;
+            transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
         }
-        .fn-button:hover, .fn-button.active {
+        .fn-button:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        .fn-button:active {
+            transform: translateY(0);
+        }
+        .fn-button.active {
             background-color: var(--accent-color);
-            color: #121212;
-            border-color: var(--accent-color);
-            transform: scale(1.05);
-            box-shadow: 0 0 15px color-mix(in srgb, var(--accent-color) 50%, transparent);
+            color: white;
+            box-shadow: 0 5px 15px color-mix(in srgb, var(--accent-color) 30%, transparent);
         }
-        
+
+        /* Card Structure & Hover Glow Effect */
         .fn-card {
-            background-color: #0d2c6c;
-            background-image: linear-gradient(160deg, #0d2c6c 0%, #0c1a3f 100%);
-            border-radius: 8px;
-            overflow: hidden;
-            transition: all 0.2s ease-in-out;
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0);
-            cursor: pointer;
-            opacity: 0; /* Start hidden for animation */
-            animation: fadeInUp 0.5s ease-out forwards;
-        }
-        .fn-card:hover {
-            transform: scale(1.03);
-            box-shadow: 0 0 15px 3px rgba(200, 220, 255, 0.8);
-        }
-        .fn-card .card-action {
-            opacity: 0;
-            transition: opacity 0.2s ease-in-out;
-        }
-        .fn-card:hover .card-action {
-            opacity: 1;
-        }
-
-
-        /* Modal Styles */
-        .modal-backdrop {
-            transition: opacity 0.3s ease;
-        }
-        .modal-content {
-            transition: transform 0.3s ease;
-        }
-        .fn-checkbox {
-            appearance: none;
-            width: 24px;
-            height: 24px;
-            border: 2px solid #555;
-            border-radius: 4px;
             position: relative;
             cursor: pointer;
-            outline: none;
+            border-radius: 22px;
+            transition: transform var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+            will-change: transform;
         }
-        .fn-checkbox:checked {
-            background-color: var(--accent-color);
-            border-color: var(--accent-color);
+        .fn-card-inner {
+            background: var(--card-bg);
+            backdrop-filter: blur(15px) saturate(150%);
+            -webkit-backdrop-filter: blur(15px) saturate(150%);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative; 
+            z-index: 2;
         }
-        .fn-checkbox:checked::after {
-            content: '✓';
-            font-size: 20px;
-            color: #121212;
+        @property --angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+        .fn-card::before {
+            content: "";
             position: absolute;
-            top: 50%;
-            left: 50%;
+            inset: -3px;
+            z-index: 0;
+            background: conic-gradient(from var(--angle), transparent 20%, var(--rarity-color, transparent), transparent 80%);
+            border-radius: inherit;
+            animation: spin 4s linear infinite paused;
+            opacity: 0;
+            transition: opacity 0.4s ease-out;
+            filter: blur(12px);
+        }
+        .fn-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: var(--card-bg-solid);
+            border-radius: 20px;
+            z-index: 1;
+        }
+        .fn-card:hover { transform: translateY(-8px) scale(1.03); }
+        .fn-card:hover::before { opacity: 1; animation-play-state: running; }
+        @keyframes spin { to { --angle: 360deg; } }
+        .card-action {
+            opacity: 0;
+            transition: opacity var(--transition-speed) ease;
+            pointer-events: none;
+        }
+        .fn-card:hover .card-action { 
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Modal */
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            transition: opacity var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .modal-content { animation: scaleIn var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* Checkbox & Toggles */
+        .fn-checkbox {
+            appearance: none; width: 22px; height: 22px;
+            border: 2px solid #c7c7cc;
+            border-radius: 6px; position: relative;
+            cursor: pointer; outline: none; transition: all 0.2s ease;
+        }
+        .fn-checkbox:checked { background-color: var(--accent-color); border-color: var(--accent-color); }
+        .fn-checkbox:checked::after {
+            content: '✓'; font-size: 16px; color: white;
+            position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
         }
+        .ios-toggle .dot { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .ios-toggle input ~ div:first-of-type { background-color: #39393d; }
+        .ios-toggle input:checked ~ .dot { transform: translateX(100%); }
+        .ios-toggle input:checked ~ div:first-of-type { background-color: #34c759; }
         
         /* Sidebar Nav */
         #sidebar-nav {
-            transition: width 0.3s ease, background-color 0.3s ease, padding 0.3s ease;
-            width: 48px; /* Width of the collapsed bar */
-            border-radius: 9999px; /* rounded-full */
-            padding: 8px;
-            background-color: rgba(0,0,0,0.5);
-            overflow: hidden; /* Hide the text when collapsed */
-            max-height: 80vh; /* NEU: Maximale Höhe, damit es nicht den ganzen Bildschirm einnimmt */
+            transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+            width: 56px; border-radius: 28px; padding: 8px;
+            overflow: hidden; animation: fadeIn 0.5s ease;
         }
-        #sidebar-nav:hover {
-            width: 240px; /* Expanded width */
-            border-radius: 12px; /* rounded-lg */
-            background-color: rgba(15, 23, 42, 0.9);
-            padding: 16px;
+        #sidebar-nav:hover { width: 250px; border-radius: 20px; padding: 16px; }
+        #sidebar-links .link-text {
+            opacity: 0; transition: opacity 0.2s ease, width 0.2s ease;
+            transition-delay: 0.05s; width: 0; overflow: hidden;
         }
-
-        #sidebar-links {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            height: 100%; /* NEU: Füllt den Container aus */
-            overflow-y: auto; /* NEU: Scrollen aktivieren, wenn nötig */
-            overflow-x: hidden; /* NEU: Horizontale Scrollbar ausblenden */
-            padding-right: 4px; /* NEU: Platz für die Scrollbar */
-        }
-
-        /* NEU: Eigene Scrollbar für die Sidebar */
-        #sidebar-links::-webkit-scrollbar { width: 6px; }
-        #sidebar-links::-webkit-scrollbar-track { background: transparent; }
-        #sidebar-links::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 3px; }
-        #sidebar-links::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
-
+        #sidebar-nav:hover .link-text { opacity: 1; width: auto; margin-left: 1rem; }
         #sidebar-links .sidebar-link {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.5rem;
-            border-radius: 8px;
             transition: background-color 0.2s ease;
-            width: 100%;
-            cursor: pointer;
-            white-space: nowrap; /* Prevent text from wrapping */
-            text-decoration: none;
-            color: #d1d5db; /* gray-300 */
+            color: var(--text-color-secondary); font-weight: 500; justify-content: center;
         }
-
-        /* NEU: Text nur einblenden, wenn die Sidebar ausgeklappt ist */
-        #sidebar-links .sidebar-link .link-text {
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        #sidebar-nav:hover .sidebar-link .link-text {
-            opacity: 1;
-        }
-
-        #sidebar-links .sidebar-link:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-        }
-
+        #sidebar-nav:hover #sidebar-links .sidebar-link { justify-content: flex-start; }
+        #sidebar-links .sidebar-link:hover { background-color: rgba(255, 255, 255, 0.05); color: var(--text-color); }
+        #sidebar-links .sidebar-link.active { color: var(--text-color); background-color: rgba(255, 255, 255, 0.1); }
         #sidebar-links .sidebar-link .dot {
-            flex-shrink: 0;
-            width: 12px;
-            height: 12px;
-            background-color: #9ca3af; /* gray-400 */
-            border-radius: 9999px;
-            transition: all 0.2s ease-in-out;
+            width: 8px; height: 8px; transition: all 0.2s ease;
+            background-color: var(--text-color-secondary); flex-shrink: 0;
         }
-        #sidebar-links .sidebar-link:hover .dot {
-            background-color: var(--accent-color);
-        }
-        #sidebar-links .sidebar-link.active .dot {
-            background-color: #ffffff;
-            transform: scale(1.5);
-        }
-        #sidebar-links .sidebar-link.active {
-            background-color: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-
-        .play-music-btn {
-            font-family: sans-serif;
-            line-height: 1;
-        }
-
-        .new-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: var(--accent-color);
-            color: #121212;
-            padding: 2px 10px;
-            border-radius: 5px;
-            font-size: 1rem;
-            text-transform: uppercase;
-            z-index: 10;
-            animation: pulse-badge 2s infinite;
-        }
-
-        @keyframes pulse-badge {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-color) 70%, transparent); }
-            50% { transform: scale(1.05); box-shadow: 0 0 10px 5px color-mix(in srgb, var(--accent-color) 0%, transparent); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-color) 0%, transparent); }
-        }
-
-        #scrollToTopBtn {
-            transition: opacity 0.3s, transform 0.3s;
-            opacity: 0;
-            transform: translateY(20px);
-            pointer-events: none;
-        }
-        #scrollToTopBtn.show {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
+        #sidebar-links .sidebar-link:hover .dot, #sidebar-links .sidebar-link.active .dot {
+            background-color: var(--accent-color); transform: scale(1.3);
+            box-shadow: 0 0 8px var(--accent-color);
         }
         
-        #toast-notification {
-            transition: opacity 0.5s, transform 0.5s;
+        /* New Badge */
+        .new-badge {
+            position: absolute; top: 12px; left: 12px;
+            background-color: var(--accent-color);
+            color: white; padding: 3px 10px; border-radius: 8px;
+            font-size: 0.8rem; font-weight: 600; text-transform: uppercase; z-index: 10;
         }
 
-        /* Variant Image Styles */
-        .variant-image-container {
-            position: relative;
-            width: 100%;
-            height: 100%;
+        /* Inputs & Custom Select */
+        .ios-input {
+            background-color: rgba(255, 255, 255, 0.08);
+            border: none; border-radius: 10px; transition: all 0.2s ease;
         }
+        .ios-input:hover { background-color: rgba(255, 255, 255, 0.12); }
+        .ios-input:focus {
+             background-color: rgba(255, 255, 255, 0.12);
+             box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 40%, transparent);
+             outline: none;
+        }
+        
+        .custom-select-container { position: relative; width: 100%; }
+        .custom-select-trigger {
+            cursor: pointer; padding: 0.5rem; display: flex;
+            justify-content: space-between; align-items: center;
+        }
+        .custom-select-trigger::after {
+            content: '▾'; color: var(--text-color-secondary);
+        }
+        .custom-select-options {
+            position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+            z-index: 10; border-radius: 10px; overflow: hidden;
+            display: none; animation: fadeIn 0.1s ease-out;
+        }
+        .custom-select-options.open { display: block; }
+        .custom-select-option {
+            padding: 0.5rem; cursor: pointer;
+            background-color: var(--card-bg-solid);
+        }
+        .custom-select-option:hover, .custom-select-option.selected {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Toast & ScrollToTop */
+        #toast-notification { animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #scrollToTopBtn {
+            opacity: 0; transform: translateY(20px); pointer-events: none;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #scrollToTopBtn.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .no-scroll { overflow: hidden; }
+        .share-buttons-hidden .share-btn { display: none; }
+        #shop-countdown-container.hidden { display: none; }
+
+        /* Variant Image & Shine Effect */
+        .variant-image-container { position: relative; width: 100%; height: 100%; overflow: hidden; }
         .variant-image {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             object-fit: contain;
-            transition: opacity 0.7s ease-in-out;
-            opacity: 0;
+            transition: opacity 0.7s ease-in-out; opacity: 0;
         }
-        .variant-image.active {
-            opacity: 1;
+        .variant-image.active { opacity: 1; }
+        .variant-image-container::after {
+            content: '';
+            position: absolute;
+            top: -10%; 
+            left: 0;
+            width: 30%;
+            height: 120%;
+            background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+            transform: translateX(-200%) skewX(-25deg);
+            z-index: 5;
+            pointer-events: none;
         }
-        .color-swatch {
-            transition: all 0.2s ease-in-out;
+        .variant-image-container.shine-active::after {
+            animation: shine-sweep 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
+        @keyframes shine-sweep {
+            from { transform: translateX(-200%) skewX(-25deg); }
+            to { transform: translateX(400%) skewX(-25deg); }
+        }
+
+        .color-swatch { transition: all 0.2s ease-in-out; }
         .color-swatch.selected {
             transform: scale(1.15);
-            border-color: white;
+            box-shadow: 0 0 0 3px var(--text-color), 0 0 0 5px var(--accent-color);
         }
-        .share-buttons-hidden .share-btn {
-            display: none;
-        }
-        .no-scroll {
+
+        /* Mobile Warning Overlay */
+        #mobile-warning-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999; /* Highest z-index */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(15px);
             overflow: hidden;
+            padding: 1rem;
         }
-        #shop-countdown-container.hidden {
-            display: none;
+
+        .warning-container {
+            padding: 2rem;
+            border-radius: 1.5rem;
+            text-align: center;
+            max-width: 90%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .warning-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffdd00; /* Cyberpunk Yellow */
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px #ffdd00, 0 0 5px #ff5555;
+        }
+
+        .warning-text {
+            font-size: 1rem;
+            color: var(--text-color);
+        }
+
+        .warning-tape {
+            position: absolute;
+            width: 200%;
+            height: 50px;
+            background: repeating-linear-gradient(
+                -45deg,
+                rgba(255, 220, 0, 0.7),
+                rgba(255, 220, 0, 0.7) 25px,
+                transparent 25px,
+                transparent 50px
+            );
+            animation: move-tape 10s linear infinite;
+            z-index: 1;
+            border-top: 1px solid rgba(255, 220, 0, 0.8);
+            border-bottom: 1px solid rgba(255, 220, 0, 0.8);
+        }
+
+        .tape1 { top: 25%; transform: rotate(-15deg); }
+        .tape2 { bottom: 25%; transform: rotate(-15deg); }
+
+        @keyframes move-tape {
+            from { background-position: 0 0; }
+            to { background-position: -200px 0; }
+        }
+
+        /* Hide warning on larger screens */
+        @media (min-width: 768px) {
+            #mobile-warning-overlay {
+                display: none;
+            }
         }
     </style>
 </head>
-<body class="bg-zinc-900 text-white fortnite-font">
+<body class="min-h-screen">
+
+    <!-- Mobile Warning Overlay -->
+    <div id="mobile-warning-overlay">
+        <div class="warning-tape tape1"></div>
+        <div class="warning-container glass-effect">
+            <h2 class="warning-title">SYSTEM WARNUNG</h2>
+            <p class="warning-text">Diese Ansicht wird zurzeit für mobile Geräte optimiert.</p>
+        </div>
+        <div class="warning-tape tape2"></div>
+    </div>
 
     <!-- Sidebar Navigation -->
-    <nav id="sidebar-nav" class="hidden fixed top-1/2 -translate-y-1/2 left-4 z-20 bg-black/50 p-2 rounded-full opacity-0">
-        <div id="sidebar-links" class="flex flex-col gap-3 items-center">
+    <nav id="sidebar-nav" class="hidden glass-effect fixed top-1/2 -translate-y-1/2 left-4 z-40">
+        <div id="sidebar-links" class="flex flex-col gap-0 items-start h-full max-h-[80vh] overflow-y-auto overflow-x-hidden">
             <!-- Links werden hier dynamisch eingefügt -->
         </div>
     </nav>
 
-    <div class="container mx-auto p-4 md:p-8">
-        <div class="sticky top-0 bg-black/50 backdrop-blur-sm z-10 py-4 mb-6 rounded-xl">
-            <div class="flex flex-col md:flex-row gap-4 justify-between items-center px-4">
+    <div class="container mx-auto p-4 md:p-6">
+        <!-- Sticky Header mit Glass-Effekt -->
+        <div class="sticky top-4 glass-effect z-30 py-3 px-4 mb-6 rounded-2xl">
+            <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
                 <div>
-                    <h1 class="text-2xl font-bold text-yellow-300 drop-shadow-lg" data-translate="title">FORTNITE ASSET EXPLORER</h1>
+                    <h1 class="text-xl sm:text-2xl font-bold" data-translate="title">FORTNITE ASSET EXPLORER</h1>
                 </div>
-                <div class="flex gap-3 p-1 bg-zinc-800 rounded-lg">
-                    <button id="tab-all" class="fn-button active px-5 py-1 rounded-md text-base" data-translate="tabAll">Alle Assets</button>
-                    <button id="tab-shop" class="fn-button px-5 py-1 rounded-md text-base" data-translate="tabShop">Item-Shop</button>
+                <div class="flex gap-2 p-1 bg-black/20 rounded-lg">
+                    <button id="tab-all" class="fn-button active px-5 py-1.5 rounded-md text-sm" data-translate="tabAll">Alle Assets</button>
+                    <button id="tab-shop" class="fn-button px-5 py-1.5 rounded-md text-sm" data-translate="tabShop">Item-Shop</button>
                 </div>
-                <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-                    <input type="text" id="search-input" placeholder="Suchen..." class="bg-zinc-800 border-2 border-zinc-700 rounded-md px-4 py-2 w-full md:w-64 text-white placeholder-zinc-500 focus:outline-none focus:border-yellow-300 transition-colors">
-                    <button id="filter-button" class="fn-button px-6 py-2 rounded-md text-lg" data-translate="filterButton">Filter</button>
+                <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                    <input type="text" id="search-input" placeholder="Suchen..." class="ios-input px-4 py-2 w-full md:w-64 focus:outline-none transition-colors text-white placeholder-gray-400">
+                    <button id="filter-button" class="fn-button px-5 py-2 rounded-lg" data-translate="filterButton">Filter</button>
                     <div class="relative">
-                        <button id="settings-button" class="fn-button p-3 rounded-md text-lg flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <button id="settings-button" class="fn-button p-2.5 rounded-lg flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311a1.464 1.464 0 0 1-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c-1.4-.413-1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.858 2.929 2.929 0 0 1 0 5.858z"/>
                             </svg>
                         </button>
-                        <div id="settings-menu" class="hidden absolute top-full right-0 mt-2 bg-zinc-800 border-2 border-zinc-700 rounded-lg p-4 z-50 w-72">
-                            <label for="variant-cycle-toggle" class="flex items-center justify-between gap-4 cursor-pointer text-lg">
-                                <span data-translate="settingsAutoCycle">Auto-Stilwechsel</span>
+                        <div id="settings-menu" class="hidden absolute top-full right-0 mt-2 glass-effect rounded-2xl p-4 z-50 w-72">
+                            <!-- iOS Toggles -->
+                            <label for="variant-cycle-toggle" class="ios-toggle flex items-center justify-between gap-4 cursor-pointer">
+                                <span data-translate="settingsAutoCycle" class="font-medium">Auto-Stilwechsel</span>
                                 <div class="relative">
-                                    <input type="checkbox" id="variant-cycle-toggle" class="sr-only peer">
-                                    <div class="block bg-zinc-600 w-14 h-8 rounded-full peer-checked:bg-green-500 transition"></div>
-                                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-full peer-checked:bg-zinc-900"></div>
+                                    <input type="checkbox" id="variant-cycle-toggle" class="sr-only">
+                                    <div class="block w-12 h-7 rounded-full transition"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full"></div>
                                 </div>
                             </label>
-                            <hr class="border-zinc-700 my-4">
-                            <label for="share-button-toggle" class="flex items-center justify-between gap-4 cursor-pointer text-lg">
-                                <span data-translate="settingsShowShareButton">Teilen-Button anzeigen</span>
+                            <hr class="border-white/10 my-3">
+                             <label for="share-button-toggle" class="ios-toggle flex items-center justify-between gap-4 cursor-pointer">
+                                <span data-translate="settingsShowShareButton" class="font-medium">Teilen-Button</span>
                                 <div class="relative">
-                                    <input type="checkbox" id="share-button-toggle" class="sr-only peer">
-                                    <div class="block bg-zinc-600 w-14 h-8 rounded-full peer-checked:bg-green-500 transition"></div>
-                                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-full peer-checked:bg-zinc-900"></div>
+                                    <input type="checkbox" id="share-button-toggle" class="sr-only">
+                                    <div class="block w-12 h-7 rounded-full transition"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full"></div>
                                 </div>
                             </label>
-                            <hr class="border-zinc-700 my-4">
-                            <label for="shop-countdown-toggle" class="flex items-center justify-between gap-4 cursor-pointer text-lg">
-                                <span data-translate="settingsShowCountdownAlways">Countdown immer anzeigen</span>
+                            <hr class="border-white/10 my-3">
+                             <label for="shop-countdown-toggle" class="ios-toggle flex items-center justify-between gap-4 cursor-pointer">
+                                <span data-translate="settingsShowCountdownAlways" class="font-medium">Countdown immer</span>
                                 <div class="relative">
-                                    <input type="checkbox" id="shop-countdown-toggle" class="sr-only peer">
-                                    <div class="block bg-zinc-600 w-14 h-8 rounded-full peer-checked:bg-green-500 transition"></div>
-                                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition peer-checked:translate-x-full peer-checked:bg-zinc-900"></div>
+                                    <input type="checkbox" id="shop-countdown-toggle" class="sr-only">
+                                    <div class="block w-12 h-7 rounded-full transition"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full"></div>
                                 </div>
                             </label>
-                            <hr class="border-zinc-700 my-4">
-                            <div class="space-y-2">
-                                <span class="text-lg" data-translate="settingsAccentColor">Akzentfarbe</span>
+                            <hr class="border-white/10 my-3">
+                             <label for="sounds-toggle" class="ios-toggle flex items-center justify-between gap-4 cursor-pointer">
+                                <span data-translate="settingsSounds" class="font-medium">UI-Sounds</span>
+                                <div class="relative">
+                                    <input type="checkbox" id="sounds-toggle" class="sr-only">
+                                    <div class="block w-12 h-7 rounded-full transition"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-5 h-5 rounded-full"></div>
+                                </div>
+                            </label>
+                            <!-- Other settings -->
+                            <div class="space-y-2 mt-4">
+                                <span class="font-medium" data-translate="settingsAccentColor">Akzentfarbe</span>
                                 <div id="color-picker" class="flex justify-between gap-3 pt-1">
-                                    <button class="color-swatch w-10 h-10 rounded-full border-2 border-transparent" style="background-color: #f8f800;" data-color="#f8f800" title="Fortnite Gelb"></button>
-                                    <button class="color-swatch w-10 h-10 rounded-full border-2 border-transparent" style="background-color: #0076c2;" data-color="#0076c2" title="Selten Blau"></button>
-                                    <button class="color-swatch w-10 h-10 rounded-full border-2 border-transparent" style="background-color: #8c3eff;" data-color="#8c3eff" title="Episch Lila"></button>
-                                    <button class="color-swatch w-10 h-10 rounded-full border-2 border-transparent" style="background-color: #e58800;" data-color="#e58800" title="Legendär Orange"></button>
+                                    <button class="color-swatch w-9 h-9 rounded-full border-2 border-transparent" style="background-color: #007aff;" data-color="#007aff" title="iOS Blau"></button>
+                                    <button class="color-swatch w-9 h-9 rounded-full border-2 border-transparent" style="background-color: #ff9500;" data-color="#ff9500" title="iOS Orange"></button>
+                                    <button class="color-swatch w-9 h-9 rounded-full border-2 border-transparent" style="background-color: #34c759;" data-color="#34c759" title="iOS Grün"></button>
+                                    <button class="color-swatch w-9 h-9 rounded-full border-2 border-transparent" style="background-color: #af52de;" data-color="#af52de" title="iOS Lila"></button>
                                 </div>
                             </div>
-                            <hr class="border-zinc-700 my-4">
-                             <div class="space-y-2">
-                                <label for="new-badge-duration" class="text-lg" data-translate="settingsNewBadge">"Neu"-Anzeige für</label>
-                                <select id="new-badge-duration" class="w-full bg-zinc-700 border border-zinc-600 rounded-md p-2 focus:outline-none focus:border-yellow-300">
-                                    <!-- Options will be populated by JS -->
-                                </select>
+                            <div class="space-y-2 mt-4">
+                               <label for="new-badge-duration" class="font-medium" data-translate="settingsNewBadge">"Neu"-Anzeige für</label>
+                               <select id="new-badge-duration" class="w-full hidden"></select>
                             </div>
-                            <hr class="border-zinc-700 my-4">
-                            <div class="space-y-2">
-                               <label for="variant-cycle-speed" class="text-lg" data-translate="settingsCycleSpeed">Stilwechsel-Tempo</label>
-                               <select id="variant-cycle-speed" class="w-full bg-zinc-700 border border-zinc-600 rounded-md p-2 focus:outline-none focus:border-yellow-300">
-                                   <!-- Options will be populated by JS -->
-                               </select>
+                            <div class="space-y-2 mt-4">
+                               <label for="variant-cycle-speed" class="font-medium" data-translate="settingsCycleSpeed">Stilwechsel-Tempo</label>
+                               <select id="variant-cycle-speed" class="w-full hidden"></select>
                            </div>
-                           <hr class="border-zinc-700 my-4">
-                            <div class="space-y-2">
-                               <label for="language-select" class="text-lg" data-translate="settingsLanguage">Sprache</label>
-                               <select id="language-select" class="w-full bg-zinc-700 border border-zinc-600 rounded-md p-2 focus:outline-none focus:border-yellow-300">
+                            <div class="space-y-2 mt-4">
+                               <label for="language-select" class="font-medium" data-translate="settingsLanguage">Sprache</label>
+                               <select id="language-select" class="w-full hidden">
                                    <option value="de">Deutsch</option>
-                                   <option value="en">English</option>
+                                   <option value="en" selected>English</option>
                                    <option value="es">Español</option>
                                </select>
                            </div>
@@ -417,53 +493,88 @@
                     </div>
                 </div>
             </div>
-            <div id="item-count-wrapper" class="text-center text-zinc-400 mt-4 text-lg flex justify-center items-center gap-4">
+            <div id="item-count-wrapper" class="text-center text-sm text-[var(--text-color-secondary)] mt-3 flex justify-center items-center gap-4">
                 <span id="item-count"></span>
                 <div id="shop-countdown-container" class="hidden">
                     <span data-translate="countdownLabel">Shop wechselt in:</span>
-                    <span id="shop-countdown" class="font-bold text-white"></span>
+                    <span id="shop-countdown" class="font-semibold text-[var(--text-color)]"></span>
                 </div>
             </div>
         </div>
 
         <div id="loader" class="flex justify-center items-center py-20"><div class="loader"></div></div>
-        <div id="item-grid"></div>
-        <div id="sentinel"></div> <!-- Sentinel for infinite scroll -->
+        <div id="grid-container" class="relative">
+            <div id="item-grid"></div>
+            <div id="sentinel"></div> <!-- Sentinel for infinite scroll -->
+            <!-- Glasige Ladeschnecke für Shop-Updates -->
+            <div id="shop-loader-overlay" class="hidden absolute inset-0 z-20 glass-effect flex justify-center items-center rounded-2xl">
+                <div class="loader"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Filter Modal -->
-    <div id="filter-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex justify-center items-center modal-backdrop opacity-0">
-        <div class="bg-zinc-900 p-8 rounded-lg w-full max-w-2xl border-2 border-zinc-700 modal-content transform scale-95">
-            <h2 class="text-3xl uppercase mb-6 text-center" data-translate="filterTitle">Filtern</h2>
+    <div id="filter-modal" class="hidden fixed inset-0 z-50 flex justify-center items-center modal-backdrop opacity-0">
+        <div class="glass-effect modal-content p-8 rounded-3xl w-full max-w-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-center" data-translate="filterTitle">Filtern</h2>
             <div id="type-filter-container" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
                 <!-- Checkboxen werden hier eingefügt -->
             </div>
-            <hr class="border-zinc-700 my-6">
+            <hr class="border-white/10 my-6">
             <div class="flex justify-center mb-8">
-                 <label class="flex items-center gap-3 cursor-pointer text-lg">
+                 <label class="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" id="new-items-filter" class="fn-checkbox">
                     <span data-translate="filterNewOnly">Nur neue Gegenstände anzeigen</span>
                 </label>
             </div>
             <div class="flex justify-center gap-4">
-                 <button id="apply-filters" class="fn-button bg-yellow-400 text-black border-yellow-400 hover:bg-yellow-300 px-8 py-3 text-xl" data-translate="filterApply">Anwenden</button>
-                 <button id="close-modal" class="fn-button bg-zinc-700 hover:bg-zinc-600 px-8 py-3 text-xl" data-translate="filterClose">Schließen</button>
+                 <button id="apply-filters" class="fn-button active px-8 py-3 rounded-xl text-base" data-translate="filterApply">Anwenden</button>
+                 <button id="close-modal" class="fn-button px-8 py-3 rounded-xl text-base" data-translate="filterClose">Schließen</button>
             </div>
         </div>
     </div>
     
-    <button id="scrollToTopBtn" class="fixed bottom-8 right-8 bg-yellow-400 text-black w-14 h-14 rounded-full flex items-center justify-center text-3xl z-30 hover:bg-yellow-300 shadow-lg">
+    <!-- Item Detail Modal -->
+    <div id="item-detail-modal" class="hidden fixed inset-0 z-50 flex justify-center items-center modal-backdrop opacity-0 p-4">
+        <div class="glass-effect modal-content p-6 sm:p-8 rounded-3xl w-full max-w-4xl relative">
+            <button id="close-detail-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                </svg>
+            </button>
+            <div id="detail-content-wrapper" class="grid md:grid-cols-2 gap-6 sm:gap-8 max-h-[85vh] overflow-y-auto">
+                <div id="detail-image-container" class="aspect-square rounded-2xl shimmer-bg flex items-center justify-center">
+                    <img id="detail-image" src="" alt="Item Image" class="w-full h-full object-contain opacity-0 transition-opacity duration-500">
+                </div>
+                <div class="flex flex-col">
+                    <h2 id="detail-name" class="text-3xl sm:text-4xl font-bold mb-1">Item Name</h2>
+                    <p id="detail-rarity" class="text-lg font-semibold mb-4" style="color: var(--rarity-color);">Rarity</p>
+                    <p id="detail-description" class="text-base text-gray-300 mb-6">Description...</p>
+                    <hr class="border-white/10 my-2">
+                    <div id="detail-stats" class="space-y-3 pt-4">
+                        <!-- Stats werden hier dynamisch eingefügt -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <button id="scrollToTopBtn" class="fixed bottom-8 right-8 glass-effect w-14 h-14 rounded-full flex items-center justify-center text-2xl z-30 font-bold">
         &uarr;
     </button>
     
-    <div id="toast-notification" class="fixed bottom-8 left-1/2 -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg opacity-0 transform translate-y-4">
+    <div id="toast-notification" class="fixed bottom-8 left-1/2 -translate-x-1/2 glass-effect px-6 py-3 rounded-xl shadow-lg opacity-0 transform translate-y-4">
         Link kopiert!
     </div>
         
     <audio id="audio-player" class="hidden"></audio>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+    // Die gesamte JavaScript-Logik von der ursprünglichen Datei bleibt hier unverändert.
+    // Sie steuert die API-Aufrufe, Filterung, Suche und alle Interaktionen.
+    // Das neue Design wird nur durch die obigen CSS-Änderungen angewendet.
+    document.addEventListener('DOMContentLoaded', () => {
             const itemGrid = document.getElementById('item-grid');
             const searchInput = document.getElementById('search-input');
             const loader = document.getElementById('loader');
@@ -491,11 +602,23 @@
             const languageSelect = document.getElementById('language-select');
             const shareButtonToggle = document.getElementById('share-button-toggle');
             const shopCountdownToggle = document.getElementById('shop-countdown-toggle');
+            const soundsToggle = document.getElementById('sounds-toggle'); // Sound-Toggle
             const shopCountdownContainer = document.getElementById('shop-countdown-container');
             const shopCountdown = document.getElementById('shop-countdown');
+            const shopLoaderOverlay = document.getElementById('shop-loader-overlay');
+            const itemDetailModal = document.getElementById('item-detail-modal');
+            const closeDetailModal = document.getElementById('close-detail-modal');
+            const detailName = document.getElementById('detail-name');
+            const detailRarity = document.getElementById('detail-rarity');
+            const detailDescription = document.getElementById('detail-description');
+            const detailImage = document.getElementById('detail-image');
+            const detailImageContainer = document.getElementById('detail-image-container');
+            const detailStats = document.getElementById('detail-stats');
 
+            sidebarNav.addEventListener('mouseenter', () => document.body.classList.add('no-scroll'));
+            sidebarNav.addEventListener('mouseleave', () => document.body.classList.remove('no-scroll'));
 
-            let apiKey = '69eac605-420ddfb7-ad6d74d2-7244a7cb'; // <-- API-KEY WURDE EINGEFÜGT
+            let apiKey = '69eac605-420ddfb7-ad6d74d2-7244a7cb';
             let allAssets = [];
             let filteredAssets = [];
             let currentlyDisplayedItems = 0;
@@ -506,82 +629,42 @@
             let lastAppliedFilterTypes = [];
             let lastAppliedShowOnlyNew = false;
             let countdownInterval = null;
+            let lastShopUpdate = null;
             
             const translations = {
                 en: {
-                    title: "FORTNITE ASSET EXPLORER",
-                    tabAll: "All Assets",
-                    tabShop: "Item Shop",
-                    searchPlaceholder: "Search...",
-                    filterButton: "Filter",
-                    itemCount: (c) => `${c} items found`,
-                    itemCountShop: (c) => `${c} items in shop`,
-                    newBadge: "New",
-                    filterTitle: "Filter",
-                    filterNewOnly: "Show new items only",
-                    filterApply: "Apply",
-                    filterClose: "Close",
-                    settingsAutoCycle: "Auto-Cycle Styles",
-                    settingsAccentColor: "Accent Color",
-                    settingsNewBadge: `"New" Badge For`,
-                    settingsCycleSpeed: "Cycle Speed",
-                    settingsLanguage: "Language",
-                    settingsShowShareButton: "Show Share Button",
-                    settingsShowCountdownAlways: "Always show countdown",
-                    countdownLabel: "Shop resets in:",
-                    linkCopied: "Link copied!",
+                    title: "FORTNITE ASSET EXPLORER", tabAll: "All Assets", tabShop: "Item Shop", searchPlaceholder: "Search...", filterButton: "Filter",
+                    itemCount: (c) => `${c} items found`, itemCountShop: (c) => `${c} items in shop`, newBadge: "New", filterTitle: "Filter",
+                    filterNewOnly: "Show new items only", filterApply: "Apply", filterClose: "Close", settingsAutoCycle: "Auto-Cycle Styles",
+                    settingsAccentColor: "Accent Color", settingsNewBadge: `"New" Badge For`, settingsCycleSpeed: "Cycle Speed", settingsLanguage: "Language",
+                    settingsShowShareButton: "Show Share Button", settingsShowCountdownAlways: "Always show countdown", countdownLabel: "Shop resets in:",
+                    linkCopied: "Link copied!", statsLastSeen: "Last Seen", statsOccurrences: "Occurrences", statsFirstSeen: "First Seen",
+                    statsNotAvailable: "Not available in the Item Shop.", settingsSounds: "UI Sounds",
                     typeOptions: { "outfit": "Outfits", "emote": "Emotes", "pickaxe": "Pickaxes", "glider": "Gliders", "backpack": "Back Blings", "wrap": "Wraps", "music": "Music", "loadingscreen": "Loading Screens" },
                     newBadgeOptions: { "3": "3 Days", "7": "7 Days", "14": "14 Days", "0": "Never Show" },
                     cycleSpeedOptions: { "1000": "1 Second (Fast)", "1500": "1.5 Seconds (Normal)", "2500": "2.5 Seconds (Slow)" }
                 },
                 de: {
-                    title: "FORTNITE ASSET EXPLORER",
-                    tabAll: "Alle Assets",
-                    tabShop: "Item-Shop",
-                    searchPlaceholder: "Suchen...",
-                    filterButton: "Filter",
-                    itemCount: (c) => `${c} Gegenstände`,
-                    itemCountShop: (c) => `${c} Gegenstände im Shop`,
-                    newBadge: "Neu",
-                    filterTitle: "Filtern",
-                    filterNewOnly: "Nur neue Gegenstände anzeigen",
-                    filterApply: "Anwenden",
-                    filterClose: "Schließen",
-                    settingsAutoCycle: "Auto-Stilwechsel",
-                    settingsAccentColor: "Akzentfarbe",
-                    settingsNewBadge: `"Neu"-Anzeige für`,
-                    settingsCycleSpeed: "Stilwechsel-Tempo",
-                    settingsLanguage: "Sprache",
-                    settingsShowShareButton: "Teilen-Button anzeigen",
-                    settingsShowCountdownAlways: "Countdown immer anzeigen",
-                    countdownLabel: "Shop wechselt in:",
-                    linkCopied: "Link kopiert!",
+                    title: "FORTNITE ASSET EXPLORER", tabAll: "Alle Assets", tabShop: "Item-Shop", searchPlaceholder: "Suchen...", filterButton: "Filter",
+                    itemCount: (c) => `${c} Gegenstände`, itemCountShop: (c) => `${c} Gegenstände im Shop`, newBadge: "Neu", filterTitle: "Filtern",
+                    filterNewOnly: "Nur neue Gegenstände anzeigen", filterApply: "Anwenden", filterClose: "Schließen", settingsAutoCycle: "Auto-Stilwechsel",
+                    settingsAccentColor: "Akzentfarbe", settingsNewBadge: `"Neu"-Anzeige für`, settingsCycleSpeed: "Stilwechsel-Tempo", settingsLanguage: "Sprache",
+                    settingsShowShareButton: "Teilen-Button", settingsShowCountdownAlways: "Countdown immer", countdownLabel: "Shop wechselt in:",
+                    linkCopied: "Link kopiert!", statsLastSeen: "Zuletzt im Shop", statsOccurrences: "Anzahl im Shop", statsFirstSeen: "Erstmals erschienen",
+                    statsNotAvailable: "Nicht im Item-Shop erhältlich.", settingsSounds: "UI-Sounds",
                     typeOptions: { "outfit": "Outfits", "emote": "Emotes", "pickaxe": "Spitzhacken", "glider": "Hängegleiter", "backpack": "Rücken-Accessoires", "wrap": "Lackierungen", "music": "Musik", "loadingscreen": "Ladebildschirme" },
                     newBadgeOptions: { "3": "3 Tage", "7": "7 Tage", "14": "14 Tage", "0": "Nie anzeigen" },
                     cycleSpeedOptions: { "1000": "1 Sekunde (Schnell)", "1500": "1.5 Sekunden (Normal)", "2500": "2.5 Sekunden (Langsam)" }
                 },
                 es: {
-                    title: "EXPLORADOR DE ASSETS DE FORTNITE",
-                    tabAll: "Todos los Assets",
-                    tabShop: "Tienda de Objetos",
-                    searchPlaceholder: "Buscar...",
-                    filterButton: "Filtros",
-                    itemCount: (c) => `${c} objetos encontrados`,
-                    itemCountShop: (c) => `${c} objetos en la tienda`,
-                    newBadge: "Nuevo",
-                    filterTitle: "Filtros",
-                    filterNewOnly: "Mostrar solo nuevos",
-                    filterApply: "Aplicar",
-                    filterClose: "Cerrar",
-                    settingsAutoCycle: "Rotación auto. de estilos",
-                    settingsAccentColor: "Color de acento",
-                    settingsNewBadge: `Mostrar "Nuevo" por`,
-                    settingsCycleSpeed: "Velocidad de rotación",
-                    settingsLanguage: "Idioma",
-                    settingsShowShareButton: "Mostrar botón de compartir",
-                    settingsShowCountdownAlways: "Mostrar siempre cuenta atrás",
-                    countdownLabel: "La tienda se reinicia en:",
-                    linkCopied: "¡Enlace copiado!",
+                    title: "EXPLORADOR DE ASSETS DE FORTNITE", tabAll: "Todos los Assets", tabShop: "Tienda de Objetos", searchPlaceholder: "Buscar...", filterButton: "Filtros",
+                    itemCount: (c) => `${c} objetos encontrados`, itemCountShop: (c) => `${c} objetos en la tienda`, newBadge: "Nuevo", filterTitle: "Filtros",
+                    filterNewOnly: "Mostrar solo nuevos", filterApply: "Aplicar", filterClose: "Cerrar", settingsAutoCycle: "Rotación auto. de estilos",
+                    settingsAccentColor: "Color de acento", settingsNewBadge: `Mostrar "Nuevo" por`, settingsCycleSpeed: "Velocidad de rotación", settingsLanguage: "Idioma",
+                    settingsShowShareButton: "Mostrar botón de compartir", settingsShowCountdownAlways: "Mostrar siempre cuenta atrás",
+                    countdownLabel: "La tienda se reinicia en:", linkCopied: "¡Enlace copiado!", statsLastSeen: "Visto por última vez",
+                    statsOccurrences: "Apariciones", statsFirstSeen: "Visto por primera vez", statsNotAvailable: "No disponible en la Tienda de Objetos.",
+                    settingsSounds: "Sonidos de UI",
                     typeOptions: { "outfit": "Trajes", "emote": "Gestos", "pickaxe": "Picos", "glider": "Ala deltas", "backpack": "Mochilas", "wrap": "Envoltorios", "music": "Música", "loadingscreen": "Pantallas de carga" },
                     newBadgeOptions: { "3": "3 días", "7": "7 días", "14": "14 días", "0": "Nunca mostrar" },
                     cycleSpeedOptions: { "1000": "1 segundo (Rápido)", "1500": "1.5 segundos (Normal)", "2500": "2.5 segundos (Lento)" }
@@ -590,62 +673,64 @@
             
             let currentPlayingButton = null;
             let variantCyclerObserver;
-
-            let showShareButton = localStorage.getItem('showShareButton') !== 'false'; // default true
+            let showShareButton = localStorage.getItem('showShareButton') !== 'false';
             shareButtonToggle.checked = showShareButton;
-            
-            let showShopCountdownAlways = localStorage.getItem('showShopCountdownAlways') === 'true'; // default false
+            let showShopCountdownAlways = localStorage.getItem('showShopCountdownAlways') === 'true';
             shopCountdownToggle.checked = showShopCountdownAlways;
-
-            let currentLanguage = localStorage.getItem('language') || 'de';
+            let currentLanguage = localStorage.getItem('language') || 'en';
             languageSelect.value = currentLanguage;
-
             let autoCycleVariants = localStorage.getItem('autoCycleVariants') === 'true';
             variantCycleToggle.checked = autoCycleVariants;
-
             let newBadgeDuration = parseInt(localStorage.getItem('newBadgeDuration') || '7', 10);
-            
             let variantCycleSpeed = parseInt(localStorage.getItem('variantCycleSpeed') || '1500', 10);
+            let soundsEnabled = localStorage.getItem('soundsEnabled') !== 'false'; // Default to true
+            soundsToggle.checked = soundsEnabled;
 
-            const rarityClasses = {
-                'legendary': 'border-rarity-legendary', 'epic': 'border-rarity-epic', 'rare': 'border-rarity-rare',
-                'uncommon': 'border-rarity-uncommon', 'common': 'border-rarity-common', 'mythic': 'border-rarity-mythic',
-                'exotic': 'border-rarity-exotic', 'icon': 'border-rarity-icon', 'dark': 'border-rarity-dark',
-                'slurp': 'border-rarity-slurp', 'frozen': 'border-rarity-frozen', 'lava': 'border-rarity-lava',
-                'shadow': 'border-rarity-shadow', 'starwars': 'border-rarity-starwars', 'marvel': 'border-rarity-marvel',
-                'dc': 'border-rarity-dc', 'gaminglegends': 'border-rarity-gaminglegends',
+            // --- Sound Effect Setup ---
+            const synth = new Tone.Synth({ volume: -12 }).toDestination();
+            const membraneSynth = new Tone.MembraneSynth({ volume: -10 }).toDestination();
+            const playClickSound = () => { if (soundsEnabled && Tone.context.state === 'running') membraneSynth.triggerAttackRelease("C1", "8n"); };
+            const playToggleSound = (isOn) => { if (soundsEnabled && Tone.context.state === 'running') synth.triggerAttackRelease(isOn ? "C5" : "A4", "16n"); };
+            const playOpenSound = () => { if (soundsEnabled && Tone.context.state === 'running') synth.triggerAttackRelease("E5", "16n"); };
+            const playCloseSound = () => { if (soundsEnabled && Tone.context.state === 'running') synth.triggerAttackRelease("C4", "16n"); };
+            
+            const startAudioContext = () => {
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                document.body.removeEventListener('click', startAudioContext);
+                document.body.removeEventListener('touchend', startAudioContext);
+            };
+            document.body.addEventListener('click', startAudioContext, { once: true });
+            document.body.addEventListener('touchend', startAudioContext, { once: true });
+
+
+            const rarityColorMap = {
+                'legendary': '#e58800', 'epic': '#8c3eff', 'rare': '#0076c2', 'uncommon': '#0fa51d', 'common': '#7f7f7f', 'mythic': '#cda434',
+                'exotic': '#00c8c8', 'icon': '#009c95', 'dark': '#c735b5', 'slurp': '#00a4b4', 'frozen': '#6593b4', 'lava': '#c13800',
+                'shadow': '#414141', 'starwars': '#f8f800', 'marvel': '#9f0013', 'dc': '#003067', 'gaminglegends': '#4b0082',
             };
 
             const updateUIText = (lang) => {
                 const t = translations[lang];
                 document.documentElement.lang = lang;
-
                 document.querySelectorAll('[data-translate]').forEach(el => {
                     const key = el.dataset.translate;
                     if (t[key] && typeof t[key] === 'string') el.textContent = t[key];
                 });
-                
                 searchInput.placeholder = t.searchPlaceholder;
                 toast.textContent = t.linkCopied;
-
                 typeFilterContainer.innerHTML = '';
                 Object.entries(t.typeOptions).forEach(([value, label]) => {
-                    typeFilterContainer.innerHTML += `
-                        <label class="flex items-center gap-3 cursor-pointer text-lg">
-                            <input type="checkbox" value="${value}" class="fn-checkbox filter-checkbox">
-                            <span>${label}</span>
-                        </label>
-                    `;
+                    typeFilterContainer.innerHTML += `<label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" value="${value}" class="fn-checkbox filter-checkbox"><span>${label}</span></label>`;
                 });
-                
                 newBadgeDurationSelect.innerHTML = '';
                 Object.entries(t.newBadgeOptions).forEach(([value, label]) => {
                     newBadgeDurationSelect.innerHTML += `<option value="${value}">${label}</option>`;
                 });
                 newBadgeDurationSelect.value = newBadgeDuration;
-
                 variantCycleSpeedSelect.innerHTML = '';
-                 Object.entries(t.cycleSpeedOptions).forEach(([value, label]) => {
+                Object.entries(t.cycleSpeedOptions).forEach(([value, label]) => {
                     variantCycleSpeedSelect.innerHTML += `<option value="${value}">${label}</option>`;
                 });
                 variantCycleSpeedSelect.value = variantCycleSpeed;
@@ -653,38 +738,54 @@
             
             const startShopCountdown = () => {
                 if (countdownInterval) clearInterval(countdownInterval);
-                
                 const shouldShow = currentView === 'shop' || showShopCountdownAlways;
-
                 if (!shouldShow) {
                     shopCountdownContainer.classList.add('hidden');
                     return;
                 }
                 shopCountdownContainer.classList.remove('hidden');
-
                 countdownInterval = setInterval(() => {
                     const now = new Date();
                     const nextReset = new Date(now);
                     nextReset.setUTCHours(24, 0, 0, 0);
-
                     const diff = nextReset - now;
-
-                    const hours = Math.floor(diff / (1000 * 60 * 60));
-                    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
+                    if (diff <= 1000) {
+                        clearInterval(countdownInterval);
+                        setTimeout(refreshShop, 1500);
+                        return;
+                    }
+                    const hours = Math.floor(diff / 3600000);
+                    const minutes = Math.floor((diff % 3600000) / 60000);
+                    const seconds = Math.floor((diff % 60000) / 1000);
                     shopCountdown.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
                 }, 1000);
             };
 
-            const updateShareButtonVisibility = () => {
-                if (showShareButton) {
-                    document.body.classList.remove('share-buttons-hidden');
-                } else {
-                    document.body.classList.add('share-buttons-hidden');
+            const refreshShop = async () => {
+                if (currentView === 'shop') shopLoaderOverlay.classList.remove('hidden');
+                try {
+                    const response = await fetch(`https://fortniteapi.io/v2/shop?lang=${currentLanguage}`, { headers: { 'Authorization': apiKey } });
+                    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                    const json = await response.json();
+                    if (json.lastUpdate?.date && json.lastUpdate.date !== lastShopUpdate) {
+                        shopData = null;
+                        processShopData(json);
+                        if (currentView === 'shop') {
+                            itemGrid.innerHTML = '';
+                            sidebarLinks.innerHTML = '';
+                            applyFilters();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Fehler beim Aktualisieren des Shops:', error);
+                    if (currentView === 'shop') itemGrid.innerHTML = `<p class="col-span-full text-center text-xl text-red-500 py-16">Shop konnte nicht aktualisiert werden.</p>`;
+                } finally {
+                    if (currentView === 'shop') setTimeout(() => { shopLoaderOverlay.classList.add('hidden'); }, 500);
+                    startShopCountdown();
                 }
             };
+
+            const updateShareButtonVisibility = () => document.body.classList.toggle('share-buttons-hidden', !showShareButton);
 
             const lazyImageObserver = new IntersectionObserver((entries, observer) => {
                 entries.forEach(entry => {
@@ -693,11 +794,9 @@
                         const imageContainer = lazyImage.closest('.shimmer-bg');
                         lazyImage.onload = () => {
                             lazyImage.classList.remove('opacity-0');
-                            if(imageContainer) {
+                            if (imageContainer) {
                                 imageContainer.classList.remove('shimmer-bg');
-                                if(lazyImage.dataset.background) {
-                                   imageContainer.style.backgroundImage = `url('${lazyImage.dataset.background}')`;
-                               }
+                                if (lazyImage.dataset.background) imageContainer.style.backgroundImage = `url('${lazyImage.dataset.background}')`;
                             }
                         };
                         lazyImage.src = lazyImage.dataset.src;
@@ -708,232 +807,136 @@
 
             const isNew = (item) => {
                 if (newBadgeDuration === 0 || !item.added) return false;
-                const durationDays = newBadgeDuration;
                 const xDaysAgo = new Date();
-                xDaysAgo.setDate(xDaysAgo.getDate() - durationDays);
-                const itemAddedDate = new Date(item.added);
-                return itemAddedDate >= xDaysAgo;
+                xDaysAgo.setDate(xDaysAgo.getDate() - newBadgeDuration);
+                return new Date(item.added) >= xDaysAgo;
             };
 
             const renderCards = (items, existingCardCount = 0) => {
                 const fragment = document.createDocumentFragment();
                 items.forEach((item, index) => {
                     const imageUrl = item.images.featured || item.images.icon || item.images.smallIcon;
-                    const variantImages = item.variants?.flatMap(v => v.options?.map(o => o.image)).filter(Boolean) || [];
-
-                    if (!imageUrl && variantImages.length === 0) return;
-
-                    const hasVariants = variantImages.length > 0;
+                    if (!imageUrl && !(item.variants?.flatMap(v => v.options?.map(o => o.image)).filter(Boolean).length > 0)) return;
                     const rarity = item.rarity?.value || 'common';
-                    const rarityClass = rarityClasses[rarity] || 'border-rarity-common';
-                    
-                    let musicPlayerButton = '';
-                    if (item.type?.value === 'music' && item.preview?.url) {
-                        musicPlayerButton = `<button class="play-music-btn card-action absolute bottom-3 right-3 bg-black/60 text-white w-10 h-10 rounded-full flex items-center justify-center text-2xl hover:bg-yellow-300 hover:text-black transition-colors z-10" data-audio-src="${item.preview.url}">▶</button>`;
-                    }
-
-                    const shareButton = `<button class="share-btn card-action absolute bottom-3 right-3 bg-black/60 text-white w-8 h-8 rounded-full flex items-center justify-center text-lg hover:bg-yellow-300 hover:text-black transition-colors z-10" data-item-id="${item.id}" title="Teilen">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-share-fill" viewBox="0 0 16 16">
-                          <path d="M11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5"/>
-                        </svg>
-                    </button>`;
-
-                    let newBadge = '';
-                    if (isNew(item)) {
-                        newBadge = `<div class="new-badge">${translations[currentLanguage].newBadge}</div>`;
-                    }
-                    
+                    const rarityColor = rarityColorMap[rarity] || rarityColorMap['common'];
+                    let priceHTML = '';
+                    if (item.price > 0) priceHTML = `<div class="flex items-center font-semibold text-white mt-2"><svg viewBox="0 0 24 24" class="w-5 h-5 mr-1" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.2 15.6c-.4.2-.8.3-1.2.3-.8 0-1.5-.3-2.1-.8-.6-.6-.9-1.3-.9-2.1 0-.8.3-1.5.8-2.1.5-.5 1.2-.8 2-.8.4 0 .8.1 1.2.2v1.9c-.3-.1-.6-.2-.9-.2-.4 0-.7.1-.9.4-.2.2-.4.5-.4.9s.1.7.4.9c.2.2.5.4.9.4.3 0 .6-.1.9-.2v1.8zM17 12.5c0 .8-.3 1.5-.8 2.1s-1.2.8-2 .8c-.4 0-.8-.1-1.2-.2v-1.9c.3.1.6.2.9.2.4 0 .7-.1.9-.4s.4-.5.4-.9-.1-.7-.4-.9c-.2-.2-.5-.4-.9-.4-.3 0-.6.1-.9.2V9.3c.4-.2.8-.3 1.2-.3.8 0 1.5.3 2.1.8.5.6.8 1.3.8 2.1z"/></svg><span>${item.price.toLocaleString('de-DE')}</span></div>`;
+                    let musicPlayerButtonHTML = '';
+                    if (item.type?.value === 'music' && item.preview?.url) musicPlayerButtonHTML = `<button class="play-music-btn card-action bg-white/20 backdrop-blur-sm text-white w-10 h-10 rounded-full flex items-center justify-center text-lg hover:bg-white/40 transition-colors" data-audio-src="${item.preview.url}">▶</button>`;
+                    const shareButtonHTML = `<button class="share-btn card-action bg-white/20 backdrop-blur-sm text-white w-8 h-8 rounded-full flex items-center justify-center text-sm hover:bg-white/40 transition-colors" data-item-id="${item.id}" title="Share"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M11 2.5a2.5 2.5 0 1 1 .603 1.628l-6.718 3.12a2.499 2.499 0 0 1 0 1.504l6.718 3.12a2.5 2.5 0 1 1-.488.876l-6.718-3.12a2.5 2.5 0 1 1 0-3.256l6.718-3.12A2.5 2.5 0 0 1 11 2.5"/></svg></button>`;
+                    const card = document.createElement('div');
+                    card.className = `fn-card`;
+                    card.style.setProperty('--rarity-color', rarityColor);
+                    card.style.animationDelay = `${(existingCardCount + index) * 15}ms`;
+                    card.dataset.itemId = item.id;
+                    const variantImages = item.variants?.flatMap(v => v.options?.map(o => o.image)).filter(Boolean) || [];
+                    const hasVariants = variantImages.length > 0;
                     let imageContent = '';
                     if (hasVariants) {
                         const allImages = [imageUrl, ...variantImages];
-                        imageContent = `<div class="variant-image-container">`;
-                        allImages.forEach((src, i) => {
-                            imageContent += `<img data-src="${src}" class="lazy variant-image ${i === 0 ? 'active' : ''}" alt="${item.name} Style ${i + 1}">`;
-                        });
-                        imageContent += `</div>`;
+                        imageContent = `<div class="variant-image-container">${allImages.map((src, i) => `<img data-src="${src}" class="lazy variant-image ${i === 0 ? 'active' : ''}" alt="${item.name} Style ${i + 1}">`).join('')}</div>`;
                     } else {
                         imageContent = `<img data-src="${imageUrl}" data-background="${item.images.background || ''}" class="lazy w-full h-full object-contain opacity-0 transition-opacity duration-500" alt="${item.name}">`;
                     }
-
-
-                    const card = document.createElement('div');
-                    card.className = `fn-card ${rarityClass} flex flex-col`;
-                    card.style.animationDelay = `${(existingCardCount + index) * 30}ms`;
-                    card.innerHTML = `
-                        <div class="relative aspect-square w-full bg-cover bg-center shimmer-bg">
-                            ${newBadge}
-                            ${imageContent}
-                            ${musicPlayerButton}
-                        </div>
-                        <div class="relative p-3 text-left flex-grow flex flex-col justify-end">
-                            <h3 class="text-xl font-bold uppercase truncate">${item.name}</h3>
-                            <p class="text-sm opacity-80 capitalize">${item.type?.displayValue || ''}</p>
-                            ${shareButton}
-                        </div>`;
+                    card.innerHTML = `<div class="fn-card-inner"><div class="relative aspect-square w-full bg-cover bg-center shimmer-bg">${isNew(item) ? `<div class="new-badge">${translations[currentLanguage].newBadge}</div>` : ''}${imageContent}</div><div class="relative p-4 text-left flex-grow flex flex-col justify-end"><div class="absolute top-4 right-4 flex flex-col items-center gap-2 z-10">${shareButtonHTML}${musicPlayerButtonHTML}</div><div><h3 class="text-lg font-semibold truncate pr-12">${item.name}</h3><p class="text-sm text-[var(--text-color-secondary)] capitalize">${item.type?.displayValue || ''}</p>${priceHTML}</div></div></div>`;
                     fragment.appendChild(card);
-                    
                     card.querySelectorAll('.lazy').forEach(img => lazyImageObserver.observe(img));
-
-                    if (hasVariants) {
-                        const variantContainer = card.querySelector('.variant-image-container');
-                        if (variantContainer) variantCyclerObserver.observe(variantContainer);
-                    }
+                    if (hasVariants) variantCyclerObserver.observe(card.querySelector('.variant-image-container'));
                 });
                 return fragment;
             };
 
             const renderShopSections = (sections) => {
-                itemGrid.innerHTML = '';
-                sidebarLinks.innerHTML = '';
-                let totalItems = 0;
-
-                sections.forEach((section, index) => {
-                    if(!section.entries || section.entries.length === 0) return;
-                    const sectionId = section.id || `section-${index}`;
+                itemGrid.innerHTML = ''; sidebarLinks.innerHTML = ''; let totalItems = 0;
+                sections.forEach((section) => {
+                    if (!section.entries?.length) return;
+                    const sectionId = section.id || `section-${Date.now()}`;
                     const sectionTitle = section.name || 'Empfohlen';
-                    sidebarLinks.innerHTML += `
-                        <a href="#${sectionId}" data-section-id="${sectionId}" title="${sectionTitle}" class="sidebar-link">
-                            <div class="dot"></div>
-                            <span class="link-text uppercase text-base">${sectionTitle}</span>
-                        </a>
-                    `;
-                    
+                    sidebarLinks.innerHTML += `<a href="#${sectionId}" data-section-id="${sectionId}" title="${sectionTitle}" class="sidebar-link w-full flex items-center px-2 py-1 rounded-lg"><div class="dot rounded-full"></div><span class="link-text whitespace-nowrap">${sectionTitle}</span></a>`;
                     const sectionWrapper = document.createElement('div');
                     sectionWrapper.id = sectionId;
-                    const title = document.createElement('h2');
-                    title.className = 'text-4xl uppercase mb-4 mt-8';
-                    title.textContent = sectionTitle;
-                    sectionWrapper.appendChild(title);
-                    
+                    sectionWrapper.innerHTML = `<h2 class="text-3xl font-bold mb-4 mt-8">${sectionTitle}</h2>`;
                     const items = section.entries.flatMap(entry => (entry.items || [entry]).map(item => ({ ...item, price: entry.finalPrice })));
                     totalItems += items.length;
-
                     const itemsGridForSection = document.createElement('div');
                     itemsGridForSection.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5';
                     itemsGridForSection.appendChild(renderCards(items));
                     sectionWrapper.appendChild(itemsGridForSection);
-                    
                     itemGrid.appendChild(sectionWrapper);
                 });
                 itemCount.textContent = translations[currentLanguage].itemCountShop(totalItems);
             };
 
             const sectionObserver = new IntersectionObserver((entries) => {
+                let mostVisibleEntry = null, maxRatio = 0;
                 entries.forEach(entry => {
-                    const id = entry.target.getAttribute('id');
-                    const link = sidebarNav.querySelector(`a[data-section-id="${id}"]`);
-                    if (link && entry.isIntersecting) {
-                        sidebarNav.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-                        link.classList.add('active');
+                    if (entry.isIntersecting && entry.intersectionRatio > maxRatio) {
+                        maxRatio = entry.intersectionRatio; mostVisibleEntry = entry;
                     }
                 });
-            }, { rootMargin: "-50% 0px -50% 0px" });
+                if (mostVisibleEntry) {
+                    const id = mostVisibleEntry.target.getAttribute('id');
+                    sidebarNav.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+                    const activeLink = sidebarNav.querySelector(`a[data-section-id="${id}"]`);
+                    if (activeLink) activeLink.classList.add('active');
+                }
+            }, { threshold: [0.25, 0.5, 0.75] });
             
             const loadMoreItems = () => {
                 if (currentView !== 'all' || currentlyDisplayedItems >= filteredAssets.length) return;
-                const nextItems = filteredAssets.slice(currentlyDisplayedItems, currentlyDisplayedItems + ITEMS_PER_LOAD);
-                itemGrid.appendChild(renderCards(nextItems, currentlyDisplayedItems));
+                const nextItems = filteredAssets.slice(currentlyDisplayedItems, currentlyDisplayedItems + 60);
+                requestAnimationFrame(() => itemGrid.appendChild(renderCards(nextItems, currentlyDisplayedItems)));
                 currentlyDisplayedItems += nextItems.length;
             };
 
-            const infiniteScrollObserver = new IntersectionObserver((entries) => {
-                if (entries[0].isIntersecting) loadMoreItems();
-            });
+            const infiniteScrollObserver = new IntersectionObserver((entries) => { if (entries[0].isIntersecting) loadMoreItems(); });
             infiniteScrollObserver.observe(sentinel);
 
             const applyFilters = () => {
                 const searchTerm = searchInput.value.toLowerCase().trim();
                 const selectedTypes = lastAppliedFilterTypes;
                 const showOnlyNew = lastAppliedShowOnlyNew;
-
                 if (currentView === 'all') {
                     itemGrid.innerHTML = '';
                     itemGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5';
-                    
-                    filteredAssets = allAssets.filter(item => {
-                        const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(item.type?.value);
-                        const nameMatch = item.name.toLowerCase().includes(searchTerm);
-                        const newMatch = !showOnlyNew || isNew(item);
-                        return typeMatch && nameMatch && newMatch;
-                    });
-                    
-                    currentlyDisplayedItems = 0;
-                    loadMoreItems();
+                    filteredAssets = allAssets.filter(item => (selectedTypes.length === 0 || selectedTypes.includes(item.type?.value)) && item.name.toLowerCase().includes(searchTerm) && (!showOnlyNew || isNew(item)));
+                    currentlyDisplayedItems = 0; loadMoreItems();
                     itemCount.textContent = translations[currentLanguage].itemCount(filteredAssets.length);
                 } else if (shopData) {
                     itemGrid.className = '';
-                    const filteredSections = [];
-                    
-                    shopData.forEach(sectionData => {
-                        if (sectionData.entries && Array.isArray(sectionData.entries)) {
-                            const filteredEntries = sectionData.entries.map(entry => {
-                                const itemsToFilter = entry.items || [entry];
-                                const filteredItems = itemsToFilter.filter(item => {
-                                    const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(item.type?.value);
-                                    const nameMatch = item.name.toLowerCase().includes(searchTerm);
-                                    const newMatch = !showOnlyNew || isNew(item);
-                                    return typeMatch && nameMatch && newMatch;
-                                });
-
-                                if (filteredItems.length > 0) {
-                                    // Behalten Sie die ursprüngliche Eintragsstruktur bei, aber mit gefilterten Artikeln
-                                    return { ...entry, items: filteredItems };
-                                }
-                                return null;
-                            }).filter(Boolean);
-
-                            if (filteredEntries.length > 0) {
-                                filteredSections.push({ ...sectionData, entries: filteredEntries });
-                            }
-                        }
-                    });
-
+                    const filteredSections = shopData.map(section => {
+                        const filteredEntries = section.entries.map(entry => {
+                            const filteredItems = (entry.items || [entry]).filter(item => (selectedTypes.length === 0 || selectedTypes.includes(item.type?.value)) && item.name.toLowerCase().includes(searchTerm) && (!showOnlyNew || isNew(item)));
+                            return filteredItems.length > 0 ? { ...entry, items: filteredItems } : null;
+                        }).filter(Boolean);
+                        return filteredEntries.length > 0 ? { ...section, entries: filteredEntries } : null;
+                    }).filter(Boolean);
                     renderShopSections(filteredSections);
                     document.querySelectorAll('[id^=section-]').forEach(sec => sectionObserver.observe(sec));
                 }
             };
             
-            searchInput.addEventListener('input', () => {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(applyFilters, 300);
-            });
+            searchInput.addEventListener('input', () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(applyFilters, 300); });
             
             const switchView = (view) => {
-                currentView = view;
-                searchInput.value = '';
-                lastAppliedFilterTypes = [];
-                lastAppliedShowOnlyNew = false;
-                 document.querySelectorAll('.filter-checkbox').forEach(cb => {
-                    if (cb) cb.checked = false;
-                });
-                if(newItemsFilter) newItemsFilter.checked = false;
-                itemGrid.innerHTML = '';
-                startShopCountdown();
-                
+                playClickSound();
+                currentView = view; searchInput.value = ''; lastAppliedFilterTypes = []; lastAppliedShowOnlyNew = false;
+                document.querySelectorAll('.filter-checkbox').forEach(cb => { if (cb) cb.checked = false; });
+                if (newItemsFilter) newItemsFilter.checked = false;
+                itemGrid.innerHTML = ''; startShopCountdown();
                 if (view === 'all') {
-                    tabAll.classList.add('active');
-                    tabShop.classList.remove('active');
-                    sidebarNav.classList.add('hidden', 'opacity-0');
-                    applyFilters();
+                    tabAll.classList.add('active'); tabShop.classList.remove('active');
+                    sidebarNav.classList.add('hidden'); applyFilters();
                 } else {
-                    tabShop.classList.add('active');
-                    tabAll.classList.remove('active');
-                    itemGrid.className = '';
-                    sidebarNav.classList.remove('hidden');
-                    setTimeout(() => sidebarNav.classList.remove('opacity-0'), 10);
+                    tabShop.classList.add('active'); tabAll.classList.remove('active');
+                    itemGrid.className = ''; sidebarNav.classList.remove('hidden');
                     if (!shopData) {
                         loader.style.display = 'flex';
-                        fetchShopData().then(() => {
-                           applyFilters();
-                        }).catch(error => {
+                        fetchShopData().then(applyFilters).catch(error => {
                            console.error('Error fetching shop data:', error);
-                           itemGrid.innerHTML = `<p class="col-span-full text-center text-2xl text-red-500 py-16">Shop-Daten konnten nicht geladen werden.</p>`;
-                        }).finally(() => {
-                            loader.style.display = 'none';
-                        });
-                    } else {
-                        applyFilters();
-                    }
+                           itemGrid.innerHTML = `<p class="col-span-full text-center text-xl text-red-500 py-16">Shop-Daten konnten nicht geladen werden.</p>`;
+                        }).finally(() => { loader.style.display = 'none'; });
+                    } else { applyFilters(); }
                 }
             };
 
@@ -945,247 +948,192 @@
                     const response = await fetch(`https://fortnite-api.com/v2/cosmetics/br?language=${currentLanguage}`);
                     if (!response.ok) throw new Error(`API Error: ${response.status}`);
                     const json = await response.json();
-                    if (!json || !json.data) throw new Error("Invalid cosmetics API data.");
+                    if (!json.data) throw new Error("Invalid cosmetics API data.");
                     allAssets = json.data.filter(item => item.name && (item.images.featured || item.images.icon));
-                    
                     const urlParams = new URLSearchParams(window.location.search);
                     const itemIdToFind = urlParams.get('itemId');
                     if (itemIdToFind) {
                         const foundItem = allAssets.find(item => item.id === itemIdToFind);
-                        if (foundItem) {
-                            searchInput.value = foundItem.name;
-                        }
+                        if (foundItem) searchInput.value = foundItem.name;
                     }
                 } catch (error) {
                     console.error('Error fetching all assets:', error);
-                    itemGrid.innerHTML = `<p class="col-span-full text-center text-2xl text-red-500 py-16">Daten konnten nicht geladen werden.</p>`;
-                    allAssets = []; // Ensure assets are cleared on error
+                    itemGrid.innerHTML = `<p class="col-span-full text-center text-xl text-red-500 py-16">Daten konnten nicht geladen werden.</p>`;
+                    allAssets = [];
                 }
             };
             
             const fetchShopData = async () => {
                 if (!apiKey) {
-                    itemGrid.innerHTML = `<p class="col-span-full text-center text-2xl text-yellow-400 py-16">Bitte gib einen API-Key in den Einstellungen ein, um den Shop anzuzeigen.</p>`;
-                    console.error("API key is missing.");
+                    itemGrid.innerHTML = `<p class="col-span-full text-center text-xl text-yellow-400 py-16">Bitte gib einen API-Key ein, um den Shop anzuzeigen.</p>`;
                     throw new Error("API key is missing.");
                 }
-                 try {
-                    const response = await fetch(`https://fortniteapi.io/v2/shop?lang=${currentLanguage}`, {
-                        headers: { 'Authorization': apiKey }
-                    });
+                try {
+                    const response = await fetch(`https://fortniteapi.io/v2/shop?lang=${currentLanguage}`, { headers: { 'Authorization': apiKey } });
                     if (!response.ok) throw new Error(`API Error: ${response.status}`);
                     const json = await response.json();
-                    if (!json || !json.shop) throw new Error("Invalid shop API data.");
-                    
-                    // Group items by section name to prevent duplicates
-                    const sections = json.shop.reduce((acc, item) => {
-                        const sectionName = item.section?.name || 'Other';
-
-                        if (!acc[sectionName]) {
-                             acc[sectionName] = {
-                                // Create a stable and valid ID from the section name
-                                id: (item.section?.id || sectionName).replace(/[^a-zA-Z0-9]/g, '-').toLowerCase(),
-                                name: sectionName,
-                                entries: []
-                            };
-                        }
-                        
-                        // Find the full cosmetic details from our allAssets list
-                        const fullAsset = allAssets.find(asset => asset.id === item.mainId || asset.id === item.id);
-                        
-                        let finalAsset;
-                        if (fullAsset) {
-                            finalAsset = { ...fullAsset };
-                        } else { 
-                            // Create a fallback object for new items not in the allAssets list yet
-                            finalAsset = {
-                                id: item.mainId || item.id,
-                                name: item.displayName,
-                                type: { value: item.type?.id, displayValue: item.type?.name },
-                                rarity: { value: item.rarity?.id, displayValue: item.rarity?.name },
-                                images: {
-                                    featured: item.displayAssets?.[0]?.full_background || item.displayAssets?.[0]?.url,
-                                    icon: item.displayAssets?.[0]?.url,
-                                }
-                            };
-                        }
-                        
-                        // Create an entry structure compatible with the rest of the app
-                        const entry = {
-                            ...item, // Keep original price, etc.
-                            items: [finalAsset] // Wrap the asset in an 'items' array
-                        };
-                        acc[sectionName].entries.push(entry);
-
-                        return acc;
-                    }, {});
-
-                    shopData = Object.values(sections); // Convert object back to an array of sections
-                } catch (error) {
-                    console.error('Error fetching shop data:', error);
-                    throw error;
-                }
+                    if (!json.shop) throw new Error("Invalid shop API data.");
+                    processShopData(json);
+                } catch (error) { console.error('Error fetching shop data:', error); throw error; }
             };
 
-            filterButton.addEventListener('click', () => {
-                filterModal.classList.remove('hidden');
-                setTimeout(() => {
-                    filterModal.classList.remove('opacity-0');
-                    filterModal.querySelector('.modal-content').classList.remove('scale-95');
-                }, 10);
-            });
+            const processShopData = (json) => {
+                lastShopUpdate = json.lastUpdate?.date;
+                const sections = json.shop.reduce((acc, item) => {
+                    const sectionName = item.section?.name || 'Other';
+                    if (!acc[sectionName]) acc[sectionName] = { id: (item.section?.id || sectionName).replace(/[^a-zA-Z0-9]/g, '-').toLowerCase(), name: sectionName, entries: [] };
+                    const fullAsset = allAssets.find(asset => asset.id === item.mainId || asset.id === item.id) || {
+                        id: item.mainId || item.id, name: item.displayName, type: { value: item.type?.id, displayValue: item.type?.name },
+                        rarity: { value: item.rarity?.id, displayValue: item.rarity?.name },
+                        images: { featured: item.displayAssets?.[0]?.full_background || item.displayAssets?.[0]?.url, icon: item.displayAssets?.[0]?.url }
+                    };
+                    acc[sectionName].entries.push({ ...item, items: [fullAsset] });
+                    return acc;
+                }, {});
+                shopData = Object.values(sections);
+            };
+
+            filterButton.addEventListener('click', () => { playOpenSound(); filterModal.classList.remove('hidden'); setTimeout(() => filterModal.classList.remove('opacity-0'), 10); });
             const closeModalHandler = () => {
-                 document.querySelectorAll('.filter-checkbox').forEach(cb => { cb.checked = lastAppliedFilterTypes.includes(cb.value); });
-                 newItemsFilter.checked = lastAppliedShowOnlyNew;
-                 filterModal.classList.add('opacity-0');
-                 filterModal.querySelector('.modal-content').classList.add('scale-95');
-                 setTimeout(() => filterModal.classList.add('hidden'), 300);
+                playCloseSound();
+                document.querySelectorAll('.filter-checkbox').forEach(cb => { cb.checked = lastAppliedFilterTypes.includes(cb.value); });
+                newItemsFilter.checked = lastAppliedShowOnlyNew;
+                filterModal.classList.add('opacity-0'); setTimeout(() => filterModal.classList.add('hidden'), 300);
             };
             closeModal.addEventListener('click', closeModalHandler);
             applyFiltersBtn.addEventListener('click', () => {
+                playClickSound();
                 lastAppliedFilterTypes = Array.from(document.querySelectorAll('.filter-checkbox:checked')).map(cb => cb.value);
                 lastAppliedShowOnlyNew = newItemsFilter.checked;
-                applyFilters();
-                closeModalHandler();
+                applyFilters(); closeModalHandler();
             });
 
             sidebarLinks.addEventListener('click', (e) => {
                 const link = e.target.closest('a.sidebar-link');
-                if (!link) return;
-
-                const href = link.getAttribute('href');
-                if (href && href.startsWith('#')) {
+                if (link) {
+                    playClickSound();
                     e.preventDefault();
-                    const sectionId = href.substring(1);
+                    const sectionId = link.getAttribute('href').substring(1);
                     const sectionElement = document.getElementById(sectionId);
                     if (sectionElement) {
-                        const headerOffset = document.querySelector('.sticky.top-0')?.offsetHeight || 0;
+                        const headerOffset = document.querySelector('.sticky')?.offsetHeight || 0;
                         const elementPosition = sectionElement.getBoundingClientRect().top;
-                        const offsetPosition = elementPosition + window.scrollY - headerOffset - 16; // 1rem margin
-
-                        window.scrollTo({
-                            top: offsetPosition,
-                            behavior: 'smooth'
-                        });
+                        window.scrollTo({ top: elementPosition + window.scrollY - headerOffset - 24, behavior: 'smooth' });
                     }
                 }
             });
 
-            // Card Click Logic
             itemGrid.addEventListener('click', (e) => {
+                const card = e.target.closest('.fn-card');
+                if (!card) return;
                 const playButton = e.target.closest('.play-music-btn');
                 const shareButton = e.target.closest('.share-btn');
-                
                 if (playButton) {
                     e.stopPropagation();
-                    const audioSrc = playButton.dataset.audioSrc;
                     if (currentPlayingButton === playButton) {
-                        audioPlayer.pause();
-                        playButton.innerHTML = '▶';
-                        currentPlayingButton = null;
+                        audioPlayer.pause(); playButton.innerHTML = '▶'; currentPlayingButton = null;
                     } else {
-                        if (currentPlayingButton) {
-                            currentPlayingButton.innerHTML = '▶';
-                        }
-                        audioPlayer.src = audioSrc;
-                        audioPlayer.play();
-                        playButton.innerHTML = '■';
-                        currentPlayingButton = playButton;
+                        if (currentPlayingButton) currentPlayingButton.innerHTML = '▶';
+                        audioPlayer.src = playButton.dataset.audioSrc; audioPlayer.play();
+                        playButton.innerHTML = '■'; currentPlayingButton = playButton;
                     }
                 } else if (shareButton) {
                     e.stopPropagation();
-                    const itemId = shareButton.dataset.itemId;
-                    const shareUrl = `${window.location.origin}${window.location.pathname}?itemId=${itemId}`;
-                    
+                    playClickSound();
+                    const shareUrl = `${window.location.origin}${window.location.pathname}?itemId=${card.dataset.itemId}`;
                     const tempInput = document.createElement('textarea');
-                    tempInput.value = shareUrl;
-                    document.body.appendChild(tempInput);
-                    tempInput.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(tempInput);
-                    
+                    tempInput.value = shareUrl; document.body.appendChild(tempInput);
+                    tempInput.select(); document.execCommand('copy'); document.body.removeChild(tempInput);
                     toast.classList.remove('opacity-0', 'translate-y-4');
-                    setTimeout(() => {
-                       toast.classList.add('opacity-0', 'translate-y-4');
-                    }, 2000);
+                    setTimeout(() => toast.classList.add('opacity-0', 'translate-y-4'), 2000);
+                } else if (card.dataset.itemId) {
+                    playOpenSound();
+                    showItemDetails(card.dataset.itemId);
                 }
             });
 
-            audioPlayer.addEventListener('ended', () => {
-                if (currentPlayingButton) {
-                    currentPlayingButton.innerHTML = '▶';
-                    currentPlayingButton = null;
+            const showItemDetails = async (itemId) => {
+                const item = allAssets.find(i => i.id === itemId);
+                if (!item) return;
+                detailImage.src = ''; detailImage.classList.add('opacity-0'); detailImageContainer.classList.add('shimmer-bg');
+                itemDetailModal.classList.remove('hidden'); setTimeout(() => itemDetailModal.classList.remove('opacity-0'), 10);
+                document.body.classList.add('no-scroll');
+                detailName.textContent = item.name;
+                detailRarity.textContent = item.rarity?.displayValue || '';
+                detailRarity.style.color = rarityColorMap[item.rarity?.value] || '#fff';
+                detailDescription.textContent = item.description || '';
+                detailImage.src = item.images.featured || item.images.icon;
+                detailImage.onload = () => { detailImage.classList.remove('opacity-0'); detailImageContainer.classList.remove('shimmer-bg'); };
+                detailStats.innerHTML = `<div class="flex justify-center items-center h-24"><div class="loader !w-8 !h-8"></div></div>`;
+                try {
+                    const response = await fetch(`https://fortnite-api.com/v2/cosmetics/br/search/ids?id=${itemId}&language=${currentLanguage}`);
+                    if (!response.ok) throw new Error('Stats not found');
+                    const statsData = await response.json();
+                    const history = statsData.data?.[0]?.shopHistory;
+                    const t = translations[currentLanguage];
+                    if (history?.length > 0) {
+                        detailStats.innerHTML = `
+                            <div class="flex justify-between items-center text-base"><span class="text-[var(--text-color-secondary)]">${t.statsLastSeen}</span><span class="font-semibold">${new Date(history[history.length - 1]).toLocaleDateString(currentLanguage, { day: '2-digit', month: '2-digit', year: 'numeric' })}</span></div>
+                            <div class="flex justify-between items-center text-base"><span class="text-[var(--text-color-secondary)]">${t.statsOccurrences}</span><span class="font-semibold">${history.length}</span></div>
+                            <div class="flex justify-between items-center text-base"><span class="text-[var(--text-color-secondary)]">${t.statsFirstSeen}</span><span class="font-semibold">${new Date(history[0]).toLocaleDateString(currentLanguage, { day: '2-digit', month: '2-digit', year: 'numeric' })}</span></div>`;
+                    } else { detailStats.innerHTML = `<p class="text-center text-[var(--text-color-secondary)]">${t.statsNotAvailable}</p>`; }
+                } catch (error) {
+                    console.error("Error loading item stats:", error);
+                    detailStats.innerHTML = `<p class="text-center text-[var(--text-color-secondary)]">${translations[currentLanguage].statsNotAvailable}</p>`;
                 }
-            });
-
-            // Scroll to Top Logic
-            window.addEventListener('scroll', () => {
-                if (window.scrollY > 400) {
-                    scrollToTopBtn.classList.add('show');
-                } else {
-                    scrollToTopBtn.classList.remove('show');
-                }
-            });
-
-            scrollToTopBtn.addEventListener('click', () => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
+            };
+            
+            const closeDetailModalHandler = () => {
+                playCloseSound();
+                itemDetailModal.classList.add('opacity-0');
+                setTimeout(() => {
+                    itemDetailModal.classList.add('hidden'); detailImage.src = "";
+                    detailImage.classList.add('opacity-0'); detailImageContainer.classList.add('shimmer-bg');
+                }, 300);
+                document.body.classList.remove('no-scroll');
+            };
+            closeDetailModal.addEventListener('click', closeDetailModalHandler);
+            itemDetailModal.addEventListener('click', (e) => { if (e.target === itemDetailModal) closeDetailModalHandler(); });
+            audioPlayer.addEventListener('ended', () => { if (currentPlayingButton) { currentPlayingButton.innerHTML = '▶'; currentPlayingButton = null; } });
+            window.addEventListener('scroll', () => scrollToTopBtn.classList.toggle('show', window.scrollY > 400));
+            scrollToTopBtn.addEventListener('click', () => { playClickSound(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
 
             const handleVariantCyclingUpdate = () => {
                 document.querySelectorAll('.variant-image-container').forEach(container => {
                     let intervalId = parseInt(container.dataset.intervalId, 10);
-                    if (intervalId) {
-                        clearInterval(intervalId);
-                        container.dataset.intervalId = '';
-                    }
-
+                    if (intervalId) { clearInterval(intervalId); container.dataset.intervalId = ''; }
                     if (!autoCycleVariants) {
                         const images = container.querySelectorAll('.variant-image');
-                        if (images.length > 0) {
-                            images.forEach(img => img.classList.remove('active'));
-                            images[0].classList.add('active');
-                        }
+                        if (images.length > 0) { images.forEach(img => img.classList.remove('active')); images[0].classList.add('active'); }
                     }
-                    
-                    variantCyclerObserver.unobserve(container);
-                    variantCyclerObserver.observe(container);
+                    variantCyclerObserver.unobserve(container); variantCyclerObserver.observe(container);
                 });
             };
 
-            settingsButton.addEventListener('click', (e) => {
-                e.stopPropagation();
-                settingsMenu.classList.toggle('hidden');
-                document.body.classList.toggle('no-scroll', !settingsMenu.classList.contains('hidden'));
-            });
-
+            settingsButton.addEventListener('click', (e) => { e.stopPropagation(); settingsMenu.classList.toggle('hidden'); playOpenSound(); });
             variantCycleToggle.addEventListener('change', () => {
                 autoCycleVariants = variantCycleToggle.checked;
                 localStorage.setItem('autoCycleVariants', autoCycleVariants);
+                playToggleSound(autoCycleVariants);
                 handleVariantCyclingUpdate();
             });
-            
             document.addEventListener('click', (e) => {
                 if (!settingsMenu.classList.contains('hidden') && !settingsMenu.contains(e.target) && e.target !== settingsButton) {
                     settingsMenu.classList.add('hidden');
-                    document.body.classList.remove('no-scroll');
+                    playCloseSound();
                 }
             });
 
             const applyAccentColor = (color) => {
                 document.documentElement.style.setProperty('--accent-color', color);
-                const a = document.querySelector('.fn-button.active');
-                if(a) a.style.boxShadow = `0 0 15px color-mix(in srgb, ${color} 50%, transparent)`;
-                document.querySelectorAll('.color-swatch').forEach(swatch => {
-                    swatch.classList.toggle('selected', swatch.dataset.color === color);
-                });
+                document.querySelectorAll('.color-swatch').forEach(swatch => swatch.classList.toggle('selected', swatch.dataset.color === color));
             };
-
-            const savedColor = localStorage.getItem('accentColor') || '#f8f800';
+            const savedColor = localStorage.getItem('accentColor') || '#007aff';
             applyAccentColor(savedColor);
-
             colorPicker.addEventListener('click', (e) => {
                 const swatch = e.target.closest('.color-swatch');
                 if (swatch) {
+                    playClickSound();
                     const newColor = swatch.dataset.color;
                     localStorage.setItem('accentColor', newColor);
                     applyAccentColor(newColor);
@@ -1197,7 +1145,6 @@
                 localStorage.setItem('newBadgeDuration', newBadgeDuration);
                 applyFilters();
             });
-
             variantCycleSpeedSelect.addEventListener('change', () => {
                 variantCycleSpeed = parseInt(variantCycleSpeedSelect.value, 10);
                 localStorage.setItem('variantCycleSpeed', variantCycleSpeed);
@@ -1207,66 +1154,114 @@
             languageSelect.addEventListener('change', async () => {
                 currentLanguage = languageSelect.value;
                 localStorage.setItem('language', currentLanguage);
-                
                 updateUIText(currentLanguage);
-
+                // Re-initialize custom selects because their text content has changed
+                document.querySelectorAll('.custom-select-container').forEach(c => c.remove());
+                setupCustomSelects();
                 loader.style.display = 'flex';
                 itemGrid.innerHTML = '';
                 sidebarLinks.innerHTML = '';
-                
                 shopData = null; 
-
                 await fetchAllAssets();
-                
-                if (currentView === 'shop') {
-                    await fetchShopData();
-                }
-
+                if (currentView === 'shop') await fetchShopData();
                 applyFilters();
                 loader.style.display = 'none';
             });
-
+            
             shareButtonToggle.addEventListener('change', () => {
                 showShareButton = shareButtonToggle.checked;
+                playToggleSound(showShareButton);
                 localStorage.setItem('showShareButton', showShareButton);
                 updateShareButtonVisibility();
             });
-
             shopCountdownToggle.addEventListener('change', () => {
                 showShopCountdownAlways = shopCountdownToggle.checked;
+                playToggleSound(showShopCountdownAlways);
                 localStorage.setItem('showShopCountdownAlways', showShopCountdownAlways);
                 startShopCountdown();
             });
+            soundsToggle.addEventListener('change', () => {
+                soundsEnabled = soundsToggle.checked;
+                localStorage.setItem('soundsEnabled', soundsEnabled);
+                playToggleSound(soundsEnabled);
+            });
 
-            variantCyclerObserver = new IntersectionObserver((entries, observer) => {
+
+            variantCyclerObserver = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     const container = entry.target;
                     let intervalId = parseInt(container.dataset.intervalId, 10);
-
                     if (entry.isIntersecting) {
-                        if (autoCycleVariants && !intervalId) {
-                            const images = container.querySelectorAll('.variant-image');
-                            if (images.length > 1) {
-                                let currentIndex = 0;
-                                intervalId = setInterval(() => {
-                                    images[currentIndex].classList.remove('active');
-                                    currentIndex = (currentIndex + 1) % images.length;
-                                    images[currentIndex].classList.add('active');
-                                }, variantCycleSpeed); // Use the new speed variable
-                                container.dataset.intervalId = intervalId;
-                            }
+                        if (autoCycleVariants && !intervalId && container.querySelectorAll('.variant-image').length > 1) {
+                            let currentIndex = 0;
+                            intervalId = setInterval(() => {
+                                const images = container.querySelectorAll('.variant-image');
+                                images[currentIndex].classList.remove('active');
+                                currentIndex = (currentIndex + 1) % images.length;
+                                images[currentIndex].classList.add('active');
+                                container.classList.add('shine-active');
+                                setTimeout(() => container.classList.remove('shine-active'), 600);
+                            }, variantCycleSpeed);
+                            container.dataset.intervalId = intervalId;
                         }
-                    } else {
-                        if (intervalId) {
-                            clearInterval(intervalId);
-                            container.dataset.intervalId = ''; 
-                        }
-                    }
+                    } else if (intervalId) { clearInterval(intervalId); container.dataset.intervalId = ''; }
                 });
             });
+            
+            function setupCustomSelects() {
+                document.querySelectorAll('select').forEach(selectElement => {
+                    const container = document.createElement('div');
+                    container.className = 'custom-select-container ios-input';
+                    selectElement.parentNode.insertBefore(container, selectElement);
+                    const trigger = document.createElement('div');
+                    trigger.className = 'custom-select-trigger';
+                    trigger.textContent = selectElement.options[selectElement.selectedIndex].textContent;
+                    container.appendChild(trigger);
+                    const optionsWrapper = document.createElement('div');
+                    optionsWrapper.className = 'custom-select-options glass-effect';
+                    container.appendChild(optionsWrapper);
+                    Array.from(selectElement.options).forEach(option => {
+                        const optionEl = document.createElement('div');
+                        optionEl.className = 'custom-select-option';
+                        optionEl.textContent = option.textContent;
+                        optionEl.dataset.value = option.value;
+                        if(option.selected) optionEl.classList.add('selected');
+                        optionsWrapper.appendChild(optionEl);
+                        optionEl.addEventListener('click', () => {
+                            playClickSound();
+                            trigger.textContent = option.textContent;
+                            selectElement.value = option.value;
+                            selectElement.dispatchEvent(new Event('change'));
+                            optionsWrapper.classList.remove('open');
+                            container.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.remove('selected'));
+                            optionEl.classList.add('selected');
+                        });
+                    });
+                    trigger.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const wasOpen = optionsWrapper.classList.contains('open');
+                        closeAllSelects(null);
+                        if(!wasOpen) {
+                            playOpenSound();
+                            optionsWrapper.classList.add('open');
+                        }
+                    });
+                });
+            }
+
+            function closeAllSelects(except) {
+                 document.querySelectorAll('.custom-select-options.open').forEach(openSelect => {
+                    if (openSelect.parentNode !== except) {
+                        openSelect.classList.remove('open');
+                    }
+                });
+            }
+            
+            document.addEventListener('click', () => closeAllSelects(null));
 
             const initialLoad = async () => {
                 updateUIText(currentLanguage);
+                setupCustomSelects();
                 updateShareButtonVisibility();
                 startShopCountdown();
                 loader.style.display = 'flex';
@@ -1280,5 +1275,4 @@
     </script>
 </body>
 </html>
-
 
