@@ -873,6 +873,8 @@
             let usersListener = null;
             let analyticsListener = null;
             
+            const colorPalette = ['#007aff', '#ff9500', '#34c759', '#af52de', '#5856d6', '#ff2d55', '#ffcc00', '#5ac8fa', '#ff3b30', '#4cd964'];
+            
             const translations = {
                 en: {
                     title: "FORTNITE ASSET EXPLORER", tabAll: "All Assets", tabShop: "Item Shop", searchPlaceholder: "Search...", filterButton: "Filter",
@@ -1756,7 +1758,7 @@
             function renderCountryChart() {
                 if (!countryChartData) return;
                 if (countryChart) countryChart.destroy();
-                countryChart = new Chart(countryChartCanvas, { type: 'doughnut', data: { labels: countryChartData.map(e => e[0]), datasets: [{ data: countryChartData.map(e => e[1]), backgroundColor: ['#007aff', '#ff9500', '#34c759', '#af52de', '#5856d6'], borderColor: 'transparent' }] }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: 'white' } } } } });
+                countryChart = new Chart(countryChartCanvas, { type: 'doughnut', data: { labels: countryChartData.map(e => e[0]), datasets: [{ data: countryChartData.map(e => e[1]), backgroundColor: colorPalette.slice(0, countryChartData.length), borderColor: 'transparent' }] }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: 'white' } } } } });
             }
 
             function renderVisitsTrendChart() {
@@ -1768,9 +1770,8 @@
             function renderFilterUsageChart() {
                 if (!filterUsageData) return;
                 const t = translations[currentLanguage].typeOptions;
-                const accentColorRGB = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').match(/\d+/g).join(',');
                 if(filterUsageChart) filterUsageChart.destroy();
-                filterUsageChart = new Chart(filterUsageChartCanvas, { type: 'bar', data: { labels: filterUsageData.map(([key]) => t[key] || key), datasets: [{ label: 'Nutzung', data: filterUsageData.map(([,val]) => val), backgroundColor: `rgba(${accentColorRGB}, 0.5)` }] }, options: { animation: { x: { from: 0, duration: 800, delay: (ctx) => ctx.dataIndex * 30 } }, indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: 'white', stepSize: 1 } }, y: { ticks: { color: 'white' } } } } });
+                filterUsageChart = new Chart(filterUsageChartCanvas, { type: 'bar', data: { labels: filterUsageData.map(([key]) => t[key] || key), datasets: [{ label: 'Nutzung', data: filterUsageData.map(([,val]) => val), backgroundColor: filterUsageData.map((_, index) => colorPalette[index % colorPalette.length]) }] }, options: { animation: { x: { from: 0, duration: 800, delay: (ctx) => ctx.dataIndex * 30 } }, indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: 'white', stepSize: 1 } }, y: { ticks: { color: 'white' } } } } });
             }
 
             function reanimateDashboardCharts() {
@@ -2061,5 +2062,6 @@
     </script>
 </body>
 </html>
+
 
 
