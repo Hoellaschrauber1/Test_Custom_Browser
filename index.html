@@ -346,28 +346,29 @@
         
         /* Admin Panel Animationen */
         .admin-panel-content-container {
-            perspective: 1200px;
+            perspective: 2000px;
             position: relative;
+            overflow: hidden;
         }
         .admin-tab-content {
             backface-visibility: hidden;
             transform-style: preserve-3d;
         }
         .tab-enter-active {
-            animation: flipIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            animation: slideAndRotateIn 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
         }
         .tab-exit-active {
-            animation: flipOut 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            animation: slideAndRotateOut 0.5s cubic-bezier(0.6, -0.28, 0.73, 0.04) forwards;
             position: absolute;
             top: 0; left: 0; right: 0;
         }
-        @keyframes flipIn {
-            from { transform: rotateY(-90deg) scale(0.9); opacity: 0; }
-            to { transform: rotateY(0) scale(1); opacity: 1; }
+        @keyframes slideAndRotateIn {
+            from { opacity: 0; transform: translateX(50%) rotateY(-90deg); }
+            to { opacity: 1; transform: translateX(0) rotateY(0deg); }
         }
-        @keyframes flipOut {
-            from { transform: rotateY(0) scale(1); opacity: 1; }
-            to { transform: rotateY(90deg) scale(0.9); opacity: 0; }
+        @keyframes slideAndRotateOut {
+            from { opacity: 1; transform: translateX(0) rotateY(0deg); }
+            to { opacity: 0; transform: translateX(-50%) rotateY(90deg); }
         }
 
         .search-item-fall-in {
@@ -975,9 +976,10 @@
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
             const db = getFirestore(app);
-            let countryChart = null;
-            let visitsTrendChart = null;
-            let filterUsageChart = null;
+            
+            // Globale Variablen für Chart-Instanzen und deren Daten
+            let countryChart = null, visitsTrendChart = null, filterUsageChart = null;
+            let countryChartData = null, visitsTrendData = null, filterUsageData = null, topSearchesData = null;
 
             // --- Firebase Auth & User Logic ---
 
@@ -1715,11 +1717,9 @@
                 tab.addEventListener('click', () => {
                     playClickSound();
                     const activeTab = document.querySelector('.admin-tab.active');
-                    const activeContent = document.querySelector('.admin-tab-content:not(.hidden)');
-                    
                     if (activeTab === tab) return;
 
-                    // Animate out
+                    const activeContent = document.querySelector('.admin-tab-content:not(.hidden)');
                     if (activeContent) {
                         activeContent.classList.add('tab-exit-active');
                         activeContent.addEventListener('animationend', () => {
@@ -1728,11 +1728,8 @@
                         }, { once: true });
                     }
                     
-                    // Activate new tab button
                     adminTabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
-
-                    // Animate in new content
                     const tabName = tab.dataset.tab;
                     const newContent = document.getElementById(`admin-${tabName}-tab`);
                     
@@ -1742,6 +1739,10 @@
                         newContent.addEventListener('animationend', () => {
                             newContent.classList.remove('tab-enter-active');
                         }, { once: true });
+
+                        if (tabName === 'dashboard') reanimateDashboardCharts();
+                        else if (tabName === 'analytics') reanimateAnalyticsCharts();
+
                     }, 150);
                 });
             });
@@ -1760,29 +1761,63 @@
                  adminPanelModal.classList.add('opacity-0');
                  setTimeout(() => {
                     adminPanelModal.classList.add('hidden');
-                    // Reset to default tab
                     adminTabs.forEach(t => t.classList.remove('active'));
                     document.querySelector('.admin-tab[data-tab="dashboard"]').classList.add('active');
                     adminTabContents.forEach(c => c.classList.add('hidden'));
                     document.getElementById('admin-dashboard-tab').classList.remove('hidden');
-
                  }, 300);
                  document.body.classList.remove('no-scroll');
-                 if (visitsListener) visitsListener();
-                 if (usersListener) usersListener();
-                 if (analyticsListener) analyticsListener();
+                 if (visitsListener) { visitsListener(); visitsListener = null; }
+                 if (usersListener) { usersListener(); usersListener = null; }
+                 if (analyticsListener) { analyticsListener(); analyticsListener = null; }
             });
-
-            async function loadAdminStats() {
-                // Destroy existing charts to force re-animation on each open
+            
+            function renderCountryChart() {
+                if (!countryChartData) return;
                 if (countryChart) countryChart.destroy();
+                countryChart = new Chart(countryChartCanvas, { type: 'doughnut', data: { labels: countryChartData.map(e => e[0]), datasets: [{ data: countryChartData.map(e => e[1]), backgroundColor: ['#007aff', '#ff9500', '#34c759', '#af52de', '#5856d6'], borderColor: 'transparent' }] }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: 'white' } } } } });
+            }
+
+            function renderVisitsTrendChart() {
+                if (!visitsTrendData) return;
                 if(visitsTrendChart) visitsTrendChart.destroy();
+                visitsTrendChart = new Chart(visitsTrendChartCanvas, { type: 'line', data: { labels: visitsTrendData.labels, datasets: [{ label: 'Besucher', data: visitsTrendData.data, borderColor: 'var(--accent-color)', tension: 0.3, fill: false }] }, options: { scales: { x: { type: 'time', time: { unit: 'day' }, ticks: { color: 'white'} }, y: { ticks: { color: 'white', stepSize: 1, beginAtZero: true } } }, plugins: { legend: { labels: { color: 'white' } } } } });
+            }
+
+            function renderFilterUsageChart() {
+                if (!filterUsageData) return;
+                const t = translations[currentLanguage].typeOptions;
+                const accentColorRGB = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').match(/\d+/g).join(',');
                 if(filterUsageChart) filterUsageChart.destroy();
-                
+                filterUsageChart = new Chart(filterUsageChartCanvas, { type: 'bar', data: { labels: filterUsageData.map(([key]) => t[key] || key), datasets: [{ label: 'Nutzung', data: filterUsageData.map(([,val]) => val), backgroundColor: `rgba(${accentColorRGB}, 0.5)` }] }, options: { animation: { x: { from: 0, duration: 800, delay: (ctx) => ctx.dataIndex * 30 } }, indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: 'white', stepSize: 1 } }, y: { ticks: { color: 'white' } } } } });
+            }
+
+            function reanimateDashboardCharts() {
+                renderCountryChart();
+                renderVisitsTrendChart();
+            }
+
+            function reanimateAnalyticsCharts() {
+                renderFilterUsageChart();
+                // Top Searches Fall-in Animation
+                topSearchesContainer.innerHTML = '';
+                if (topSearchesData) {
+                    topSearchesData.forEach(([term, count], index) => {
+                        const item = document.createElement('div');
+                        item.className = 'p-2 rounded-lg bg-white/5 flex justify-between search-item-fall-in';
+                        item.innerHTML = `<span>${term}</span> <b>${count}x</b>`;
+                        item.style.animationDelay = `${index * 50}ms`;
+                        topSearchesContainer.appendChild(item);
+                    });
+                }
+            }
+            
+            async function loadAdminStats() {
+                if (visitsListener) return; // Verhindert, dass Listener mehrfach angehängt werden
+
                 const announcementDoc = await getDoc(doc(db, "globals", "announcement"));
                 if(announcementDoc.exists()) announcementInput.value = announcementDoc.data().text || '';
                 
-                // Holt die UID des Founders einmalig
                 const metadataRef = doc(db, "metadata", "admin");
                 const metadataSnap = await getDoc(metadataRef);
                 const founderUID = metadataSnap.exists() ? metadataSnap.data().founderUID : null;
@@ -1790,15 +1825,13 @@
                 visitsListener = onSnapshot(query(collection(db, "visits"), orderBy("timestamp", "desc")), (snapshot) => {
                     const visits = snapshot.docs.map(d => d.data());
                     const countryData = visits.reduce((acc, v) => { acc[v.country || 'Unknown'] = (acc[v.country || 'Unknown'] || 0) + 1; return acc; }, {});
-                    const sortedCountries = Object.entries(countryData).sort(([, a], [, b]) => b - a).slice(0, 5);
-                    if(countryChart) countryChart.destroy();
-                    countryChart = new Chart(countryChartCanvas, { type: 'doughnut', data: { labels: sortedCountries.map(e => e[0]), datasets: [{ data: sortedCountries.map(e => e[1]), backgroundColor: ['#007aff', '#ff9500', '#34c759', '#af52de', '#5856d6'], borderColor: 'transparent' }] }, options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: 'white' } } } } });
-
+                    countryChartData = Object.entries(countryData).sort(([, a], [, b]) => b - a).slice(0, 5);
+                    
                     const visitsByDay = visits.reduce((acc, visit) => { const day = visit.timestamp.toDate().toISOString().split('T')[0]; acc[day] = (acc[day] || 0) + 1; return acc; }, {});
                     const trendLabels = Array.from({length: 7}, (_, i) => { const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().split('T')[0]; }).reverse();
-                    const trendData = trendLabels.map(day => visitsByDay[day] || 0);
-                    if(visitsTrendChart) visitsTrendChart.destroy();
-                    visitsTrendChart = new Chart(visitsTrendChartCanvas, { type: 'line', data: { labels: trendLabels, datasets: [{ label: 'Besucher', data: trendData, borderColor: 'var(--accent-color)', tension: 0.3, fill: false }] }, options: { scales: { x: { type: 'time', time: { unit: 'day' }, ticks: { color: 'white'} }, y: { ticks: { color: 'white', stepSize: 1, beginAtZero: true } } }, plugins: { legend: { labels: { color: 'white' } } } } });
+                    visitsTrendData = { labels: trendLabels, data: trendLabels.map(day => visitsByDay[day] || 0) };
+                    
+                    reanimateDashboardCharts();
                 });
 
                 usersListener = onSnapshot(query(collection(db, "users")), (snapshot) => {
@@ -1830,23 +1863,12 @@
                 analyticsListener = onSnapshot(query(collection(db, "analytics"), orderBy("timestamp", "desc"), limit(1000)), (snapshot) => {
                     const analytics = snapshot.docs.map(d => d.data());
                     const searchCounts = analytics.filter(a => a.term).reduce((acc, a) => { const term = a.term.toLowerCase(); acc[term] = (acc[term] || 0) + 1; return acc; }, {});
-                    const topSearches = Object.entries(searchCounts).sort(([,a],[,b]) => b-a).slice(0, 10);
+                    topSearchesData = Object.entries(searchCounts).sort(([,a],[,b]) => b-a).slice(0, 10);
                     
-                    topSearchesContainer.innerHTML = ''; // Leeren für Animation
-                    topSearches.forEach(([term, count], index) => {
-                        const item = document.createElement('div');
-                        item.className = 'p-2 rounded-lg bg-white/5 flex justify-between search-item-fall-in';
-                        item.innerHTML = `<span>${term}</span> <b>${count}x</b>`;
-                        item.style.animationDelay = `${index * 50}ms`; // Gestaffelte Animation
-                        topSearchesContainer.appendChild(item);
-                    });
-
                     const filterCounts = analytics.flatMap(a => a.filters).reduce((acc, f) => { acc[f] = (acc[f] || 0) + 1; return acc; }, {});
-                    const topFilters = Object.entries(filterCounts).sort(([,a],[,b]) => b-a);
-                    const t = translations[currentLanguage].typeOptions;
-                    const accentColorRGB = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').match(/\d+/g).join(',');
-                    if(filterUsageChart) filterUsageChart.destroy();
-                    filterUsageChart = new Chart(filterUsageChartCanvas, { type: 'bar', data: { labels: topFilters.map(([key]) => t[key] || key), datasets: [{ label: 'Nutzung', data: topFilters.map(([,val]) => val), backgroundColor: `rgba(${accentColorRGB}, 0.5)` }] }, options: { animation: { x: { from: 0, duration: 800, delay: (ctx) => ctx.dataIndex * 30 } }, indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: 'white', stepSize: 1 } }, y: { ticks: { color: 'white' } } } } });
+                    filterUsageData = Object.entries(filterCounts).sort(([,a],[,b]) => b-a);
+                    
+                    reanimateAnalyticsCharts();
                 });
             }
 
