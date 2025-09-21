@@ -912,6 +912,13 @@
                     if(!user.isAnonymous) {
                          const userDocRef = doc(db, "users", user.uid);
                          const userDoc = await getDoc(userDocRef);
+                         
+                         // Datenmigration für alte Benutzer, denen das UID-Feld fehlt
+                         if (userDoc.exists() && !userDoc.data().uid) {
+                             console.log(`Adding missing UID for user: ${user.uid}`);
+                             await updateDoc(userDocRef, { uid: user.uid });
+                         }
+
                          if (userDoc.exists() && userDoc.data().status === 'banned') {
                              console.warn("Banned user signed in. Force signing out.");
                              showBannedMessage();
@@ -1672,11 +1679,19 @@
                         <thead class="text-xs text-gray-400 uppercase"><tr><th class="p-2">Benutzer</th><th class="p-2">Rolle</th><th class="p-2">Status</th><th class="p-2 text-right">Aktionen</th></tr></thead>
                         <tbody>${users.map(u => `
                             <tr class="border-b border-white/10 ${u.status === 'banned' ? 'opacity-50' : ''}">
-                                <td class="p-2"><div class="font-medium truncate cursor-pointer hover:underline user-detail-btn" data-uid="${u.uid}">${u.email}</div><div class="text-xs text-gray-400">Registriert: ${u.createdAt.toDate().toLocaleDateString()}</div></td>
+                                <td class="p-2">
+                                    <div class="font-medium truncate cursor-pointer hover:underline user-detail-btn" data-uid="${u.uid}">
+                                        ${u.email}
+                                    </div>
+                                    <div class="text-xs text-gray-500 font-mono truncate" title="${u.uid || 'Keine ID'}">${u.uid || 'Keine ID'}</div>
+                                </td>
                                 <td class="p-2 capitalize">${u.role}</td>
                                 <td class="p-2"><span class="px-2 py-1 text-xs rounded-full ${u.status === 'banned' ? 'bg-red-500/50 text-red-200' : 'bg-green-500/50 text-green-200'}">${u.status}</span></td>
                                 <td class="p-2 text-right space-x-2">
-                                    <button class="fn-button !text-xs !px-2 !py-1 rounded-md toggle-role-btn" data-uid="${u.uid}" data-role="${u.role}">${u.role === 'founder' ? 'Herabstufen' : 'Befördern'}</button>
+                                    ${u.role !== 'founder'
+                                        ? `<button class="fn-button !text-xs !px-2 !py-1 rounded-md toggle-role-btn" data-uid="${u.uid}" data-role="${u.role}">Befördern</button>`
+                                        : `<button class="fn-button !text-xs !px-2 !py-1 rounded-md" disabled title="Founder können nicht herabgestuft werden.">Herabstufen</button>`
+                                    }
                                     <button class="fn-button !text-xs !px-2 !py-1 rounded-md toggle-ban-btn ${u.status === 'banned' ? '!bg-green-500' : '!bg-red-500'}" data-uid="${u.uid}" data-status="${u.status}">${u.status === 'banned' ? 'Entsperren' : 'Sperren'}</button>
                                 </td>
                             </tr>`).join('')}
@@ -1693,23 +1708,30 @@
                     const filterCounts = analytics.flatMap(a => a.filters).reduce((acc, f) => { acc[f] = (acc[f] || 0) + 1; return acc; }, {});
                     const topFilters = Object.entries(filterCounts).sort(([,a],[,b]) => b-a);
                     const t = translations[currentLanguage].typeOptions;
+                    const accentColorRGB = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').match(/\d+/g).join(',');
                     if(filterUsageChart) filterUsageChart.destroy();
-                    filterUsageChart = new Chart(filterUsageChartCanvas, { type: 'bar', data: { labels: topFilters.map(([key]) => t[key] || key), datasets: [{ label: 'Nutzung', data: topFilters.map(([,val]) => val), backgroundColor: 'rgba(var(--accent-color-rgb), 0.5)' }] }, options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: 'white', stepSize: 1 } }, y: { ticks: { color: 'white' } } } } });
+                    filterUsageChart = new Chart(filterUsageChartCanvas, { type: 'bar', data: { labels: topFilters.map(([key]) => t[key] || key), datasets: [{ label: 'Nutzung', data: topFilters.map(([,val]) => val), backgroundColor: `rgba(${accentColorRGB}, 0.5)` }] }, options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: 'white', stepSize: 1 } }, y: { ticks: { color: 'white' } } } } });
                 });
             }
 
             userListContainer.addEventListener('click', async e => {
-                const target = e.target;
-                const uid = target.dataset.uid;
-                if (!uid) return;
+                const roleBtn = e.target.closest('.toggle-role-btn');
+                const banBtn = e.target.closest('.toggle-ban-btn');
+                const detailBtn = e.target.closest('.user-detail-btn');
 
-                if (target.classList.contains('toggle-role-btn')) {
-                    const newRole = target.dataset.role === 'founder' ? 'user' : 'founder';
+                if (roleBtn) {
+                    const uid = roleBtn.dataset.uid;
+                    if (!uid) return;
+                    const newRole = roleBtn.dataset.role === 'founder' ? 'user' : 'founder';
                     await updateDoc(doc(db, "users", uid), { role: newRole });
-                } else if (target.classList.contains('toggle-ban-btn')) {
-                    const newStatus = target.dataset.status === 'banned' ? 'active' : 'banned';
-                     await updateDoc(doc(db, "users", uid), { status: newStatus });
-                } else if (target.classList.contains('user-detail-btn')) {
+                } else if (banBtn) {
+                    const uid = banBtn.dataset.uid;
+                    if (!uid) return;
+                    const newStatus = banBtn.dataset.status === 'banned' ? 'active' : 'banned';
+                    await updateDoc(doc(db, "users", uid), { status: newStatus });
+                } else if (detailBtn) {
+                    const uid = detailBtn.dataset.uid;
+                    if (!uid) return;
                     showUserDetails(uid);
                 }
             });
@@ -1839,5 +1861,4 @@
     </script>
 </body>
 </html>
-
 
