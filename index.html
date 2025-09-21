@@ -345,12 +345,19 @@
         }
 
         /* Global Announcement Banner */
-        #global-announcement-banner {
+        .animate-fade-in-down {
             animation: fadeInDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         @keyframes fadeInDown {
             from { opacity: 0; transform: translate(-50%, -20px); }
             to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .animate-fade-out-up {
+            animation: fadeOutUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        @keyframes fadeOutUp {
+            from { opacity: 1; transform: translate(-50%, 0); }
+            to { opacity: 0; transform: translate(-50%, -30px); }
         }
 
         /* Mobile Warning Overlay */
@@ -1833,15 +1840,31 @@
             });
 
             closeAnnouncementBtn.addEventListener('click', () => {
-                announcementBanner.classList.add('hidden');
+                announcementBanner.classList.remove('animate-fade-in-down');
+                announcementBanner.classList.add('animate-fade-out-up');
+                setTimeout(() => {
+                    announcementBanner.classList.add('hidden');
+                }, 300);
             });
             
             onSnapshot(doc(db, "globals", "announcement"), (doc) => {
-                if(doc.exists() && doc.data().text) {
+                const isCurrentlyVisible = !announcementBanner.classList.contains('hidden');
+                const hasText = doc.exists() && doc.data().text;
+
+                if (hasText) {
                     announcementText.textContent = doc.data().text;
-                    announcementBanner.classList.remove('hidden');
+                    if (!isCurrentlyVisible) {
+                         announcementBanner.classList.remove('hidden', 'animate-fade-out-up');
+                         announcementBanner.classList.add('animate-fade-in-down');
+                    }
                 } else {
-                    announcementBanner.classList.add('hidden');
+                    if (isCurrentlyVisible) {
+                        announcementBanner.classList.remove('animate-fade-in-down');
+                        announcementBanner.classList.add('animate-fade-out-up');
+                        setTimeout(() => {
+                            announcementBanner.classList.add('hidden');
+                        }, 300); // Match animation duration
+                    }
                 }
             });
 
@@ -1960,6 +1983,7 @@
     </script>
 </body>
 </html>
+
 
 
 
