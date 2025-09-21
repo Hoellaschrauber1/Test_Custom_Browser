@@ -365,6 +365,11 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        .visit-row-fall-in {
+            animation: fall-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+        }
+
         /* Global Announcement Banner */
         .animate-fade-in-down {
             animation: fadeInDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -696,8 +701,9 @@
             <h2 class="text-2xl font-bold text-center mb-4 flex-shrink-0">Admin Panel</h2>
             <div class="flex border-b border-white/10 mb-4 flex-shrink-0">
                 <button data-tab="dashboard" class="admin-tab active font-medium">Dashboard</button>
-                <button data-tab="users" class="admin-tab font-medium">Benutzer</button>
                 <button data-tab="analytics" class="admin-tab font-medium">Analyse</button>
+                <button data-tab="users" class="admin-tab font-medium">Benutzer</button>
+                <button data-tab="visits" class="admin-tab font-medium">Besuche</button>
             </div>
             <div class="admin-panel-content-container overflow-y-auto flex-grow pr-2 -mr-4">
                 <div id="admin-dashboard-tab" class="admin-tab-content space-y-8">
@@ -713,6 +719,10 @@
                         <div class="glass-effect p-4 rounded-2xl"><h3 class="text-lg font-semibold text-gray-300 mb-2">Top Suchanfragen</h3><div id="top-searches-container" class="max-h-80 overflow-y-auto text-sm pr-2"></div></div>
                         <div class="glass-effect p-4 rounded-2xl"><h3 class="text-lg font-semibold text-gray-300 mb-2">Meistgenutzte Filter</h3><div class="flex-grow min-h-[250px]"><canvas id="filter-usage-chart"></canvas></div></div>
                     </div>
+                </div>
+                <div id="admin-visits-tab" class="admin-tab-content hidden">
+                    <h3 class="text-lg font-semibold text-gray-300 mb-2">Letzte Besucher</h3>
+                    <div id="visits-list-container" class="max-h-[60vh] overflow-y-auto"></div>
                 </div>
             </div>
         </div>
@@ -836,6 +846,7 @@
             const adminTabContents = document.querySelectorAll('.admin-tab-content');
             const topSearchesContainer = document.getElementById('top-searches-container');
             const filterUsageChartCanvas = document.getElementById('filter-usage-chart');
+            const visitsListContainer = document.getElementById('visits-list-container');
 
             // User Detail Modal Elements
             const userDetailModal = document.getElementById('user-detail-modal');
@@ -1051,6 +1062,7 @@
                         isAnonymous: user.isAnonymous,
                         country: data.country_name || 'Unknown',
                         countryCode: data.country_code || 'XX',
+                        city: data.city || 'Unknown',
                         timestamp: new Date()
                     };
 
@@ -1807,13 +1819,27 @@
                 visitsListener = onSnapshot(query(collection(db, "visits"), orderBy("timestamp", "desc")), (snapshot) => {
                     const visits = snapshot.docs.map(d => d.data());
                     const countryData = visits.reduce((acc, v) => { acc[v.country || 'Unknown'] = (acc[v.country || 'Unknown'] || 0) + 1; return acc; }, {});
-                    countryChartData = Object.entries(countryData).sort(([, a], [, b]) => b - a).slice(0, 5);
+                    countryChartData = Object.entries(countryData).sort(([, a], [, b]) => b - a); // .slice(0, 5) entfernt
                     
                     const visitsByDay = visits.reduce((acc, visit) => { const day = visit.timestamp.toDate().toISOString().split('T')[0]; acc[day] = (acc[day] || 0) + 1; return acc; }, {});
                     const trendLabels = Array.from({length: 7}, (_, i) => { const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().split('T')[0]; }).reverse();
                     visitsTrendData = { labels: trendLabels, data: trendLabels.map(day => visitsByDay[day] || 0) };
                     
                     reanimateDashboardCharts();
+                    
+                    // Render visits list
+                    visitsListContainer.innerHTML = `<table class="w-full text-sm text-left">
+                        <thead class="text-xs text-gray-400 uppercase"><tr><th class="p-2">Typ</th><th class="p-2">Zeit</th><th class="p-2">Ort</th></tr></thead>
+                        <tbody>${visits.map((v, index) => {
+                            const visitTime = v.timestamp.toDate();
+                            const formattedTime = visitTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                             return `<tr class="border-b border-white/10 visit-row-fall-in" style="animation-delay: ${index * 30}ms;">
+                                <td class="p-2">${v.isAnonymous ? '<span class="text-gray-400">Anonym</span>' : 'Registriert'}</td>
+                                <td class="p-2 font-mono">${formattedTime}</td>
+                                <td class="p-2">${v.city || 'Unbekannt'}, ${v.country || 'Unbekannt'}</td>
+                            </tr>`;
+                        }).join('')}</tbody>
+                    </table>`;
                 });
 
                 usersListener = onSnapshot(query(collection(db, "users")), (snapshot) => {
@@ -2062,6 +2088,9 @@
     </script>
 </body>
 </html>
+
+
+
 
 
 
