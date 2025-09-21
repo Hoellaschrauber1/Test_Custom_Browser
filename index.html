@@ -193,69 +193,19 @@
         }
         .modal-content { animation: scaleIn var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1); }
         
-        #admin-panel-modal .modal-content {
-            transform-origin: top;
-            animation: none; /* Überschreibt die Standard-Modal-Animation */
-        }
-        .admin-panel-open {
-            animation: foldInFromTop 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-        }
-        .admin-panel-close {
-            animation: foldOutToTop 0.4s cubic-bezier(0.6, -0.28, 0.73, 0.04) forwards;
-        }
-        @keyframes foldInFromTop {
-            from {
-                transform: rotateX(-90deg) scaleY(0.95);
-                opacity: 0;
-            }
-            to {
-                transform: rotateX(0deg) scaleY(1);
-                opacity: 1;
-            }
-        }
-        @keyframes foldOutToTop {
-            from {
-                transform: rotateX(0deg) scaleY(1);
-                opacity: 1;
-            }
-            to {
-                transform: rotateX(-70deg) scaleY(0.95);
-                opacity: 0;
-            }
-        }
-
-        /* Glassy Checkbox */
+        /* Checkbox & Toggles */
         .fn-checkbox {
-            appearance: none;
-            width: 22px;
-            height: 22px;
-            position: relative;
-            cursor: pointer;
-            outline: none;
-            transition: all 0.2s ease;
-            border-radius: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            appearance: none; width: 22px; height: 22px;
+            border: 2px solid #c7c7cc;
+            border-radius: 6px; position: relative;
+            cursor: pointer; outline: none; transition: all 0.2s ease;
         }
-        .fn-checkbox:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-        .fn-checkbox:checked {
-            background-color: var(--accent-color);
-            border-color: var(--accent-color);
-        }
+        .fn-checkbox:checked { background-color: var(--accent-color); border-color: var(--accent-color); }
         .fn-checkbox:checked::after {
-            content: '✓';
-            font-size: 16px;
-            color: white;
-            position: absolute;
-            top: 50%;
-            left: 50%;
+            content: '✓'; font-size: 16px; color: white;
+            position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
         }
-        
         .ios-toggle .dot { transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
         .ios-toggle input ~ div:first-of-type { background-color: #39393d; }
         .ios-toggle input:checked ~ .dot { transform: translateX(100%); }
@@ -298,14 +248,13 @@
         }
 
         /* Inputs & Custom Select */
-        .ios-input, .ios-textarea, .ios-select {
+        .ios-input, .ios-textarea {
             background-color: rgba(255, 255, 255, 0.08);
             border: none; border-radius: 10px; transition: all 0.2s ease;
             color: var(--text-color);
-            padding: 0.5rem 1rem;
         }
-        .ios-input:hover, .ios-textarea:hover, .ios-select:hover { background-color: rgba(255, 255, 255, 0.12); }
-        .ios-input:focus, .ios-textarea:focus, .ios-select:focus {
+        .ios-input:hover, .ios-textarea:hover { background-color: rgba(255, 255, 255, 0.12); }
+        .ios-input:focus, .ios-textarea:focus {
              background-color: rgba(255, 255, 255, 0.12);
              box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 40%, transparent);
              outline: none;
@@ -414,18 +363,6 @@
         @keyframes fall-in {
             from { opacity: 0; transform: translateY(-15px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        .activity-log-item {
-            opacity: 0;
-            transform: translateX(-20px);
-            animation: slideInFromLeft 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-        @keyframes slideInFromLeft {
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
         }
 
         /* Global Announcement Banner */
@@ -770,7 +707,7 @@
                     </div>
                     <div class="glass-effect p-4 rounded-2xl"><h3 class="text-lg font-semibold text-gray-300 mb-2">Globale Ankündigung</h3><textarea id="announcement-input" class="ios-textarea w-full p-2 h-20" placeholder="Schreibe eine Ankündigung..."></textarea><button id="save-announcement-btn" class="fn-button active w-full mt-2 py-2 rounded-lg">Speichern & Anzeigen</button></div>
                 </div>
-                <div id="admin-users-tab" class="admin-tab-content hidden"><div id="user-list-container" class="max-h-[60vh] overflow-y-auto"></div></div>
+                <div id="admin-users-tab" class="admin-tab-content hidden"><h3 class="text-lg font-semibold text-gray-300 mb-2">Benutzerverwaltung</h3><div id="user-list-container" class="max-h-[60vh] overflow-y-auto"></div></div>
                 <div id="admin-analytics-tab" class="admin-tab-content hidden space-y-8">
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div class="glass-effect p-4 rounded-2xl"><h3 class="text-lg font-semibold text-gray-300 mb-2">Top Suchanfragen</h3><div id="top-searches-container" class="max-h-80 overflow-y-auto text-sm pr-2"></div></div>
@@ -1136,14 +1073,7 @@
                 document.documentElement.lang = lang;
                 document.querySelectorAll('[data-translate]').forEach(el => {
                     const key = el.dataset.translate;
-                    if (t[key]) {
-                        if (typeof t[key] === 'function') {
-                            // Placeholder for functions that need a value
-                            // Example: el.textContent = t[key](0);
-                        } else {
-                            el.textContent = t[key];
-                        }
-                    }
+                    if (t[key] && typeof t[key] === 'string') el.textContent = t[key];
                 });
                 searchInput.placeholder = t.searchPlaceholder;
                 toast.textContent = t.linkCopied;
@@ -1801,46 +1731,28 @@
             });
 
             adminPanelButton.addEventListener('click', () => {
-                const adminPanelContent = adminPanelModal.querySelector('.modal-content');
                 playOpenSound();
                 authDropdown.classList.add('hidden');
-
                 adminPanelModal.classList.remove('hidden');
-                
-                setTimeout(() => {
-                    adminPanelModal.classList.remove('opacity-0');
-                    adminPanelContent.classList.remove('admin-panel-close');
-                    adminPanelContent.classList.add('admin-panel-open');
-                }, 10);
-
+                setTimeout(() => adminPanelModal.classList.remove('opacity-0'), 10);
                 document.body.classList.add('no-scroll');
                 loadAdminStats();
             });
             
             closeAdminModal.addEventListener('click', () => {
-                const adminPanelContent = adminPanelModal.querySelector('.modal-content');
-                playCloseSound();
-                adminPanelModal.classList.add('opacity-0');
-                adminPanelContent.classList.remove('admin-panel-open');
-                adminPanelContent.classList.add('admin-panel-close');
-                
-                setTimeout(() => {
+                 playCloseSound();
+                 adminPanelModal.classList.add('opacity-0');
+                 setTimeout(() => {
                     adminPanelModal.classList.add('hidden');
-                    
-                    // Reset classes for next time
-                    adminPanelContent.classList.remove('admin-panel-open', 'admin-panel-close');
-                    
-                    // Reset tabs to default state
                     adminTabs.forEach(t => t.classList.remove('active'));
                     document.querySelector('.admin-tab[data-tab="dashboard"]').classList.add('active');
                     adminTabContents.forEach(c => c.classList.add('hidden'));
                     document.getElementById('admin-dashboard-tab').classList.remove('hidden');
-
-                    document.body.classList.remove('no-scroll');
-                    if (visitsListener) { visitsListener(); visitsListener = null; }
-                    if (usersListener) { usersListener(); usersListener = null; }
-                    if (analyticsListener) { analyticsListener(); analyticsListener = null; }
-                }, 400); // Match animation duration
+                 }, 300);
+                 document.body.classList.remove('no-scroll');
+                 if (visitsListener) { visitsListener(); visitsListener = null; }
+                 if (usersListener) { usersListener(); usersListener = null; }
+                 if (analyticsListener) { analyticsListener(); analyticsListener = null; }
             });
             
             function renderCountryChart() {
@@ -1906,36 +1818,28 @@
 
                 usersListener = onSnapshot(query(collection(db, "users")), (snapshot) => {
                     const users = snapshot.docs.map(d => d.data());
-                    userListContainer.innerHTML = `
-                        <table class="w-full text-sm text-left">
-                            <thead class="text-xs text-gray-400 uppercase">
-                                <tr>
-                                    <th class="p-2">Benutzer</th>
-                                    <th class="p-2">Rolle</th>
-                                    <th class="p-2">Status</th>
-                                    <th class="p-2 text-right">Aktionen</th>
-                                </tr>
-                            </thead>
-                            <tbody>${users.map(u => {
-                                const isFounder = u.uid === founderUID;
-                                const isSelf = u.uid === auth.currentUser?.uid;
-                                
-                                return `<tr class="border-b border-white/10 ${u.status === 'banned' ? 'opacity-50' : ''}">
-                                    <td class="p-2">
-                                        <div class="font-medium truncate cursor-pointer hover:underline user-detail-btn" data-uid="${u.uid}">${u.email}</div>
-                                        <div class="text-xs text-gray-500 font-mono truncate" title="${u.uid || 'Keine ID'}">${u.uid || 'Keine ID'}</div>
-                                    </td>
-                                    <td class="p-2 capitalize">${u.role}</td>
-                                    <td class="p-2"><span class="px-2 py-1 text-xs rounded-full ${u.status === 'banned' ? 'bg-red-500/50 text-red-200' : 'bg-green-500/50 text-green-200'}">${u.status}</span></td>
-                                    <td class="p-2 text-right space-x-2">
-                                        <button class="fn-button !text-xs !px-2 !py-1 rounded-md toggle-role-btn" data-uid="${u.uid}" data-role="${u.role}" ${isFounder || isSelf ? 'disabled' : ''}>
-                                            ${isFounder ? 'Herabstufen' : (u.role === 'user' ? 'Zum Moderator' : 'Zum Benutzer')}
-                                        </button>
-                                        <button class="fn-button !text-xs !px-2 !py-1 rounded-md toggle-ban-btn ${u.status === 'banned' ? '!bg-green-500' : '!bg-red-500'}" data-uid="${u.uid}" data-status="${u.status}" ${isFounder || isSelf ? 'disabled' : ''}>${u.status === 'banned' ? 'Entsperren' : 'Sperren'}</button>
-                                    </td>
-                                </tr>`;
-                            }).join('')}</tbody>
-                        </table>`;
+                    userListContainer.innerHTML = `<table class="w-full text-sm text-left">
+                        <thead class="text-xs text-gray-400 uppercase"><tr><th class="p-2">Benutzer</th><th class="p-2">Rolle</th><th class="p-2">Status</th><th class="p-2 text-right">Aktionen</th></tr></thead>
+                        <tbody>${users.map(u => {
+                            const isFounder = u.uid === founderUID;
+                            const isSelf = u.uid === auth.currentUser?.uid;
+                            
+                            return `<tr class="border-b border-white/10 ${u.status === 'banned' ? 'opacity-50' : ''}">
+                                <td class="p-2">
+                                    <div class="font-medium truncate cursor-pointer hover:underline user-detail-btn" data-uid="${u.uid}">${u.email}</div>
+                                    <div class="text-xs text-gray-500 font-mono truncate" title="${u.uid || 'Keine ID'}">${u.uid || 'Keine ID'}</div>
+                                </td>
+                                <td class="p-2 capitalize">${u.role}</td>
+                                <td class="p-2"><span class="px-2 py-1 text-xs rounded-full ${u.status === 'banned' ? 'bg-red-500/50 text-red-200' : 'bg-green-500/50 text-green-200'}">${u.status}</span></td>
+                                <td class="p-2 text-right space-x-2">
+                                    <button class="fn-button !text-xs !px-2 !py-1 rounded-md toggle-role-btn" data-uid="${u.uid}" data-role="${u.role}" ${isFounder || isSelf ? 'disabled' : ''}>
+                                        ${isFounder ? 'Herabstufen' : (u.role === 'user' ? 'Zum Moderator' : 'Zum Benutzer')}
+                                    </button>
+                                    <button class="fn-button !text-xs !px-2 !py-1 rounded-md toggle-ban-btn ${u.status === 'banned' ? '!bg-green-500' : '!bg-red-500'}" data-uid="${u.uid}" data-status="${u.status}" ${isFounder || isSelf ? 'disabled' : ''}>${u.status === 'banned' ? 'Entsperren' : 'Sperren'}</button>
+                                </td>
+                            </tr>`;
+                        }).join('')}</tbody>
+                    </table>`;
                 });
 
                 analyticsListener = onSnapshot(query(collection(db, "analytics"), orderBy("timestamp", "desc"), limit(1000)), (snapshot) => {
@@ -1982,26 +1886,6 @@
                 const visitsSnap = await getDocs(visitsQuery);
                 const visitsHTML = visitsSnap.docs.map(d => `<li>${d.data().timestamp.toDate().toLocaleString()} - ${d.data().country}</li>`).join('');
 
-                const analyticsQuery = query(collection(db, "analytics"), where("uid", "==", uid), orderBy("timestamp", "desc"), limit(10));
-                const analyticsSnap = await getDocs(analyticsQuery);
-                const activitiesHTML = analyticsSnap.docs.map((doc, index) => {
-                    const activity = doc.data();
-                    let logText = '';
-                    if (activity.term && activity.filters.length > 0) {
-                        logText = `Sucht nach "${activity.term}" mit Filtern: ${activity.filters.join(', ')}`;
-                    } else if (activity.term) {
-                        logText = `Sucht nach "${activity.term}"`;
-                    } else if (activity.filters.length > 0) {
-                        logText = `Benutzte Filter: ${activity.filters.join(', ')}`;
-                    }
-                    if (logText) {
-                        return `<li class="activity-log-item" style="animation-delay: ${index * 80}ms;">
-                                    <span class="text-gray-500 text-xs">${activity.timestamp.toDate().toLocaleString()}:</span> ${logText}
-                                </li>`;
-                    }
-                    return '';
-                }).join('');
-
                 userDetailContent.innerHTML = `
                     <p><strong>E-Mail:</strong> ${userData.email}</p>
                     <p><strong>User ID:</strong> <span class="text-xs">${userData.uid}</span></p>
@@ -2011,9 +1895,6 @@
                     <hr class="border-white/10 my-2">
                     <p><strong>Letzte 5 Besuche:</strong></p>
                     <ul class="list-disc list-inside text-sm text-gray-300">${visitsHTML || 'Keine Besuche aufgezeichnet.'}</ul>
-                    <hr class="border-white/10 my-4">
-                    <p><strong>Letzte 10 Aktivitäten:</strong></p>
-                    <ul class="space-y-1">${activitiesHTML || 'Keine Aktivitäten aufgezeichnet.'}</ul>
                 `;
                 userDetailModal.classList.remove('hidden');
                 setTimeout(() => userDetailModal.classList.remove('opacity-0'), 10);
