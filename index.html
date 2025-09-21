@@ -343,6 +343,23 @@
             color: var(--text-color);
             background-color: rgba(255, 255, 255, 0.05);
         }
+        
+        /* Admin Panel Animationen */
+        .tab-content-enter {
+            animation: tab-content-animation 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes tab-content-animation {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .search-item-fall-in {
+            animation: fall-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+        }
+        @keyframes fall-in {
+            from { opacity: 0; transform: translateY(-15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         /* Global Announcement Banner */
         .animate-fade-in-down {
@@ -1683,8 +1700,14 @@
                     tab.classList.add('active');
                     const tabName = tab.dataset.tab;
                     adminTabContents.forEach(content => {
-                        content.classList.toggle('hidden', content.id !== `admin-${tabName}-tab`);
+                        content.classList.add('hidden');
+                        content.classList.remove('tab-content-enter'); // Animation zurücksetzen
                     });
+                    const activeContent = document.getElementById(`admin-${tabName}-tab`);
+                    activeContent.classList.remove('hidden');
+                    // Reflow erzwingen, um Animation bei jedem Klick neu auszulösen
+                    void activeContent.offsetWidth; 
+                    activeContent.classList.add('tab-content-enter');
                 });
             });
 
@@ -1764,7 +1787,15 @@
                     const analytics = snapshot.docs.map(d => d.data());
                     const searchCounts = analytics.filter(a => a.term).reduce((acc, a) => { const term = a.term.toLowerCase(); acc[term] = (acc[term] || 0) + 1; return acc; }, {});
                     const topSearches = Object.entries(searchCounts).sort(([,a],[,b]) => b-a).slice(0, 10);
-                    topSearchesContainer.innerHTML = topSearches.map(([term, count]) => `<div class="p-2 rounded-lg bg-white/5 flex justify-between"><span>${term}</span> <b>${count}x</b></div>`).join('');
+                    
+                    topSearchesContainer.innerHTML = ''; // Leeren für Animation
+                    topSearches.forEach(([term, count], index) => {
+                        const item = document.createElement('div');
+                        item.className = 'p-2 rounded-lg bg-white/5 flex justify-between search-item-fall-in';
+                        item.innerHTML = `<span>${term}</span> <b>${count}x</b>`;
+                        item.style.animationDelay = `${index * 50}ms`; // Gestaffelte Animation
+                        topSearchesContainer.appendChild(item);
+                    });
 
                     const filterCounts = analytics.flatMap(a => a.filters).reduce((acc, f) => { acc[f] = (acc[f] || 0) + 1; return acc; }, {});
                     const topFilters = Object.entries(filterCounts).sort(([,a],[,b]) => b-a);
@@ -1983,8 +2014,4 @@
     </script>
 </body>
 </html>
-
-
-
-
 
