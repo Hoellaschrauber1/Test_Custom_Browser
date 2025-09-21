@@ -799,12 +799,11 @@
             soundsToggle.checked = soundsEnabled;
 
             // --- Sound Effect Setup ---
-            const synth = new Tone.Synth({ volume: -12 }).toDestination();
             const membraneSynth = new Tone.MembraneSynth({ volume: -10 }).toDestination();
-            const playClickSound = () => { if (soundsEnabled && Tone.context.state === 'running') membraneSynth.triggerAttackRelease("C1", "8n"); };
-            const playToggleSound = (isOn) => { if (soundsEnabled && Tone.context.state === 'running') synth.triggerAttackRelease(isOn ? "C5" : "A4", "16n"); };
-            const playOpenSound = () => { if (soundsEnabled && Tone.context.state === 'running') synth.triggerAttackRelease("E5", "16n"); };
-            const playCloseSound = () => { if (soundsEnabled && Tone.context.state === 'running') synth.triggerAttackRelease("C4", "16n"); };
+            const playClickSound = () => { if (soundsEnabled && Tone.context.state === 'running') membraneSynth.triggerAttackRelease("C1", "8n", Tone.now()); };
+            const playToggleSound = (isOn) => { if (soundsEnabled && Tone.context.state === 'running') membraneSynth.triggerAttackRelease(isOn ? "E1" : "C1", "8n", Tone.now()); };
+            const playOpenSound = () => { if (soundsEnabled && Tone.context.state === 'running') membraneSynth.triggerAttackRelease("G1", "8n", Tone.now()); };
+            const playCloseSound = () => { if (soundsEnabled && Tone.context.state === 'running') membraneSynth.triggerAttackRelease("A0", "8n", Tone.now()); };
             
             const startAudioContext = () => {
                 if (Tone.context.state !== 'running') {
@@ -1216,7 +1215,6 @@
             };
 
             filterButton.addEventListener('click', () => { playOpenSound(); filterModal.classList.remove('hidden'); setTimeout(() => filterModal.classList.remove('opacity-0'), 10); });
-            
             const closeModalHandler = () => {
                 playCloseSound();
                 document.querySelectorAll('.filter-checkbox').forEach(cb => { cb.checked = lastAppliedFilterTypes.includes(cb.value); });
@@ -1224,7 +1222,6 @@
                 filterModal.classList.add('opacity-0'); setTimeout(() => filterModal.classList.add('hidden'), 300);
             };
             closeModal.addEventListener('click', closeModalHandler);
-            
             applyFiltersBtn.addEventListener('click', () => {
                 playClickSound();
                 lastAppliedFilterTypes = Array.from(document.querySelectorAll('.filter-checkbox:checked')).map(cb => cb.value);
@@ -1313,7 +1310,6 @@
             };
             
             closeAuthModalBtn.addEventListener('click', closeAuthModalHandler);
-
             showRegisterViewBtn.addEventListener('click', () => {
                 playClickSound();
                 loginView.classList.add('hidden');
