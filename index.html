@@ -909,38 +909,50 @@
 
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
-                    if(!user.isAnonymous) {
-                         const userDocRef = doc(db, "users", user.uid);
-                         const userDoc = await getDoc(userDocRef);
-                         
-                         // Datenmigration für alte Benutzer, denen das UID-Feld fehlt
-                         if (userDoc.exists() && !userDoc.data().uid) {
-                             console.log(`Adding missing UID for user: ${user.uid}`);
-                             await updateDoc(userDocRef, { uid: user.uid });
-                         }
-
-                         if (userDoc.exists() && userDoc.data().status === 'banned') {
-                             console.warn("Banned user signed in. Force signing out.");
-                             showBannedMessage();
-                             await signOut(auth);
-                             return;
-                         }
-                    }
-
-                    trackUserVisit(user);
+                    trackUserVisit(user); // Besuch für alle (auch anonyme) Nutzer tracken
 
                     if (user.isAnonymous) {
+                        // UI für anonyme Benutzer handhaben
                         loggedOutIcon.classList.remove('hidden');
                         loggedInIcon.classList.add('hidden');
                         authDropdown.classList.add('hidden');
                     } else {
-                        loggedInIcon.classList.remove('hidden');
-                        loggedOutIcon.classList.add('hidden');
-                        userEmailDisplay.textContent = user.email;
-
+                        // Logik für registrierte Benutzer
                         const userDocRef = doc(db, "users", user.uid);
                         const userDoc = await getDoc(userDocRef);
-                        if (userDoc.exists() && userDoc.data().role === 'founder') {
+
+                        if (!userDoc.exists()) {
+                            console.error("Benutzer ist authentifiziert, hat aber kein Dokument:", user.uid);
+                            await signOut(auth);
+                            return;
+                        }
+                        
+                        const userData = userDoc.data();
+
+                        // Bann-Überprüfung
+                        if (userData.status === 'banned') {
+                            console.warn("Gesperrter Benutzer hat sich angemeldet. Automatischer Logout.");
+                            showBannedMessage();
+                            await signOut(auth);
+                            return;
+                        }
+
+                        // Datenmigration für alte Benutzer, denen UID/Status fehlt
+                        if (!userData.uid || !userData.status) {
+                            console.log(`Aktualisiere fehlende Felder für Benutzer: ${user.uid}`);
+                            await updateDoc(userDocRef, { 
+                                uid: user.uid,
+                                status: userData.status || 'active' // Fügt Status hinzu, falls er fehlt
+                            });
+                        }
+
+                        // UI aktualisieren
+                        loggedInIcon.classList.remove('hidden');
+                        loggedOutIcon.classList.add('hidden');
+                        userEmailDisplay.textContent = user.email; // E-Mail für ALLE registrierten Benutzer anzeigen
+
+                        // Admin-Button basierend auf der Rolle ein-/ausblenden
+                        if (userData.role === 'founder') {
                             adminPanelButton.classList.remove('hidden');
                             adminHr.classList.remove('hidden');
                         } else {
@@ -949,7 +961,8 @@
                         }
                     }
                 } else {
-                    signInAnonymously(auth).catch((error) => console.error("Anonymous sign-in failed:", error));
+                    // Benutzer ist abgemeldet, anonym anmelden
+                    signInAnonymously(auth).catch((error) => console.error("Anonymes Anmelden fehlgeschlagen:", error));
                 }
             });
 
@@ -1432,9 +1445,11 @@
                  registerError.textContent = '';
 
                 try {
-                    const metadataRef = doc(db, "metadata", "admin");
-                    const metadataSnap = await getDoc(metadataRef);
-                    const isFirstUser = !metadataSnap.exists() || !metadataSnap.data().founderUID;
+                    // ROBUSTERE ÜBERPRÜFUNG: Prüft direkt in der Benutzer-Collection, ob bereits ein Founder existiert.
+                    const usersRef = collection(db, "users");
+                    const q = query(usersRef, where("role", "==", "founder"), limit(1));
+                    const founderSnapshot = await getDocs(q);
+                    const isFirstUser = founderSnapshot.empty;
 
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     const user = userCredential.user;
@@ -1450,6 +1465,8 @@
                     });
 
                     if (isFirstUser) {
+                        // Die founderUID wird weiterhin in metadata gespeichert, damit die Sicherheitsregeln funktionieren.
+                        const metadataRef = doc(db, "metadata", "admin");
                         await setDoc(metadataRef, { founderUID: user.uid }, { merge: true });
                     }
 
@@ -1659,6 +1676,11 @@
                 const announcementDoc = await getDoc(doc(db, "globals", "announcement"));
                 if(announcementDoc.exists()) announcementInput.value = announcementDoc.data().text || '';
                 
+                // Holt die UID des Founders einmalig
+                const metadataRef = doc(db, "metadata", "admin");
+                const metadataSnap = await getDoc(metadataRef);
+                const founderUID = metadataSnap.exists() ? metadataSnap.data().founderUID : null;
+
                 visitsListener = onSnapshot(query(collection(db, "visits"), orderBy("timestamp", "desc")), (snapshot) => {
                     const visits = snapshot.docs.map(d => d.data());
                     const countryData = visits.reduce((acc, v) => { acc[v.country || 'Unknown'] = (acc[v.country || 'Unknown'] || 0) + 1; return acc; }, {});
@@ -1677,25 +1699,24 @@
                     const users = snapshot.docs.map(d => d.data());
                     userListContainer.innerHTML = `<table class="w-full text-sm text-left">
                         <thead class="text-xs text-gray-400 uppercase"><tr><th class="p-2">Benutzer</th><th class="p-2">Rolle</th><th class="p-2">Status</th><th class="p-2 text-right">Aktionen</th></tr></thead>
-                        <tbody>${users.map(u => `
-                            <tr class="border-b border-white/10 ${u.status === 'banned' ? 'opacity-50' : ''}">
+                        <tbody>${users.map(u => {
+                            const isFounder = u.uid === founderUID;
+                            
+                            return `<tr class="border-b border-white/10 ${u.status === 'banned' ? 'opacity-50' : ''}">
                                 <td class="p-2">
-                                    <div class="font-medium truncate cursor-pointer hover:underline user-detail-btn" data-uid="${u.uid}">
-                                        ${u.email}
-                                    </div>
+                                    <div class="font-medium truncate cursor-pointer hover:underline user-detail-btn" data-uid="${u.uid}">${u.email}</div>
                                     <div class="text-xs text-gray-500 font-mono truncate" title="${u.uid || 'Keine ID'}">${u.uid || 'Keine ID'}</div>
                                 </td>
                                 <td class="p-2 capitalize">${u.role}</td>
                                 <td class="p-2"><span class="px-2 py-1 text-xs rounded-full ${u.status === 'banned' ? 'bg-red-500/50 text-red-200' : 'bg-green-500/50 text-green-200'}">${u.status}</span></td>
                                 <td class="p-2 text-right space-x-2">
-                                    ${u.role !== 'founder'
-                                        ? `<button class="fn-button !text-xs !px-2 !py-1 rounded-md toggle-role-btn" data-uid="${u.uid}" data-role="${u.role}">Befördern</button>`
-                                        : `<button class="fn-button !text-xs !px-2 !py-1 rounded-md" disabled title="Founder können nicht herabgestuft werden.">Herabstufen</button>`
-                                    }
-                                    <button class="fn-button !text-xs !px-2 !py-1 rounded-md toggle-ban-btn ${u.status === 'banned' ? '!bg-green-500' : '!bg-red-500'}" data-uid="${u.uid}" data-status="${u.status}">${u.status === 'banned' ? 'Entsperren' : 'Sperren'}</button>
+                                    <button class="fn-button !text-xs !px-2 !py-1 rounded-md toggle-role-btn" data-uid="${u.uid}" data-role="${u.role}" ${isFounder ? 'disabled' : ''}>
+                                        ${isFounder ? 'Herabstufen' : (u.role === 'user' ? 'Zum Moderator' : 'Zum Benutzer')}
+                                    </button>
+                                    <button class="fn-button !text-xs !px-2 !py-1 rounded-md toggle-ban-btn ${u.status === 'banned' ? '!bg-green-500' : '!bg-red-500'}" data-uid="${u.uid}" data-status="${u.status}" ${isFounder ? 'disabled' : ''}>${u.status === 'banned' ? 'Entsperren' : 'Sperren'}</button>
                                 </td>
-                            </tr>`).join('')}
-                        </tbody>
+                            </tr>`;
+                        }).join('')}</tbody>
                     </table>`;
                 });
 
@@ -1721,12 +1742,12 @@
 
                 if (roleBtn) {
                     const uid = roleBtn.dataset.uid;
-                    if (!uid) return;
-                    const newRole = roleBtn.dataset.role === 'founder' ? 'user' : 'founder';
+                    if (!uid || roleBtn.disabled) return;
+                    const newRole = roleBtn.dataset.role === 'user' ? 'moderator' : 'user';
                     await updateDoc(doc(db, "users", uid), { role: newRole });
                 } else if (banBtn) {
                     const uid = banBtn.dataset.uid;
-                    if (!uid) return;
+                    if (!uid || banBtn.disabled) return;
                     const newStatus = banBtn.dataset.status === 'banned' ? 'active' : 'banned';
                     await updateDoc(doc(db, "users", uid), { status: newStatus });
                 } else if (detailBtn) {
@@ -1861,4 +1882,6 @@
     </script>
 </body>
 </html>
+
+
 
