@@ -385,6 +385,76 @@
             from { opacity: 1; transform: translate(-50%, 0); }
             to { opacity: 0; transform: translate(-50%, -30px); }
         }
+
+        /* Mobile Warning Overlay */
+        #mobile-warning-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999; /* Highest z-index */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(15px);
+            overflow: hidden;
+            padding: 1rem;
+        }
+
+        .warning-container {
+            padding: 2rem;
+            border-radius: 1.5rem;
+            text-align: center;
+            max-width: 90%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .warning-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffdd00; /* Cyberpunk Yellow */
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px #ffdd00, 0 0 5px #ff5555;
+        }
+
+        .warning-text {
+            font-size: 1rem;
+            color: var(--text-color);
+        }
+
+        .warning-tape {
+            position: absolute;
+            width: 200%;
+            height: 50px;
+            background: repeating-linear-gradient(
+                -45deg,
+                rgba(255, 220, 0, 0.7),
+                rgba(255, 220, 0, 0.7) 25px,
+                transparent 25px,
+                transparent 50px
+            );
+            animation: move-tape 10s linear infinite;
+            z-index: 1;
+            border-top: 1px solid rgba(255, 220, 0, 0.8);
+            border-bottom: 1px solid rgba(255, 220, 0, 0.8);
+        }
+
+        .tape1 { top: 25%; transform: rotate(-15deg); }
+        .tape2 { bottom: 25%; transform: rotate(-15deg); }
+
+        @keyframes move-tape {
+            from { background-position: 0 0; }
+            to { background-position: -200px 0; }
+        }
+
+        /* Hide warning on larger screens */
+        @media (min-width: 768px) {
+            #mobile-warning-overlay {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -394,6 +464,16 @@
             <span id="announcement-text" class="font-medium text-center"></span>
             <button id="close-announcement" class="absolute top-1/2 right-4 -translate-y-1/2 text-2xl font-bold text-white/80 hover:text-white">&times;</button>
         </div>
+    </div>
+
+    <!-- Mobile Warning Overlay -->
+    <div id="mobile-warning-overlay">
+        <div class="warning-tape tape1"></div>
+        <div class="warning-container glass-effect">
+            <h2 class="warning-title">SYSTEM WARNUNG</h2>
+            <p class="warning-text">Diese Ansicht wird zurzeit für mobile Geräte optimiert.</p>
+        </div>
+        <div class="warning-tape tape2"></div>
     </div>
 
     <!-- Sidebar Navigation -->
@@ -979,16 +1059,12 @@
                     
                     const getPlatform = () => {
                         const ua = navigator.userAgent;
-                        // Zuerst nach Tablets suchen. Das ist zuverlässiger.
-                        // Prüft auf iPad, "tablet", oder Android UAs, die NICHT "Mobile" enthalten.
-                        if (/iPad|tablet/i.test(ua) || (/Android/i.test(ua) && !/Mobile/i.test(ua))) {
+                        if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
                             return "Tablet";
                         }
-                        // Jetzt nach einer größeren Auswahl an mobilen Kennungen suchen.
-                        if (/Mobi|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
+                        if (/Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
                             return "Mobile";
                         }
-                        // Standardmäßig Desktop, wenn keine mobilen/tablet Kennungen gefunden werden.
                         return "Desktop";
                     };
 
@@ -2031,9 +2107,6 @@
     </script>
 </body>
 </html>
-
-
-
 
 
 
