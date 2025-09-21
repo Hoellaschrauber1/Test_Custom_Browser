@@ -505,10 +505,10 @@
                             </svg>
                         </button>
                         <div id="auth-dropdown" class="hidden absolute top-full right-0 mt-2 glass-effect rounded-2xl p-2 z-50 w-48">
-                           <button id="admin-panel-button" class="hidden w-full text-left px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors">Admin Panel</button>
-                           <hr id="admin-hr" class="hidden border-white/10 my-1">
                            <div id="user-email" class="px-2 py-1.5 text-sm text-gray-400 truncate"></div>
                            <hr class="border-white/10 my-1">
+                           <button id="admin-panel-button" class="hidden w-full text-left px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors">Admin Panel</button>
+                           <hr id="admin-hr" class="hidden border-white/10 my-1">
                            <button id="logout-button" class="w-full text-left px-2 py-1.5 rounded-lg hover:bg-white/10 transition-colors">Logout</button>
                         </div>
                     </div>
@@ -671,7 +671,7 @@
             const itemCount = document.getElementById('item-count');
             const filterButton = document.getElementById('filter-button');
             const filterModal = document.getElementById('filter-modal');
-            const closeModal = document.getElementById('close-modal');
+            const closeModalBtn = document.getElementById('close-modal');
             const applyFiltersBtn = document.getElementById('apply-filters');
             const typeFilterContainer = document.getElementById('type-filter-container');
             const newItemsFilter = document.getElementById('new-items-filter');
@@ -1221,7 +1221,7 @@
                 newItemsFilter.checked = lastAppliedShowOnlyNew;
                 filterModal.classList.add('opacity-0'); setTimeout(() => filterModal.classList.add('hidden'), 300);
             };
-            closeModal.addEventListener('click', closeModalHandler);
+            closeModalBtn.addEventListener('click', closeModalHandler);
             applyFiltersBtn.addEventListener('click', () => {
                 playClickSound();
                 lastAppliedFilterTypes = Array.from(document.querySelectorAll('.filter-checkbox:checked')).map(cb => cb.value);
@@ -1310,6 +1310,7 @@
             };
             
             closeAuthModalBtn.addEventListener('click', closeAuthModalHandler);
+
             showRegisterViewBtn.addEventListener('click', () => {
                 playClickSound();
                 loginView.classList.add('hidden');
@@ -1662,4 +1663,5 @@
     </script>
 </body>
 </html>
+
 
