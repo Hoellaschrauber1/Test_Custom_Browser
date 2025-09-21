@@ -1804,9 +1804,15 @@
                 const adminPanelContent = adminPanelModal.querySelector('.modal-content');
                 playOpenSound();
                 authDropdown.classList.add('hidden');
-                adminPanelModal.classList.remove('hidden', 'opacity-0');
-                adminPanelContent.classList.remove('admin-panel-close');
-                adminPanelContent.classList.add('admin-panel-open');
+
+                adminPanelModal.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    adminPanelModal.classList.remove('opacity-0');
+                    adminPanelContent.classList.remove('admin-panel-close');
+                    adminPanelContent.classList.add('admin-panel-open');
+                }, 10);
+
                 document.body.classList.add('no-scroll');
                 loadAdminStats();
             });
@@ -1814,25 +1820,27 @@
             closeAdminModal.addEventListener('click', () => {
                 const adminPanelContent = adminPanelModal.querySelector('.modal-content');
                 playCloseSound();
+                adminPanelModal.classList.add('opacity-0');
                 adminPanelContent.classList.remove('admin-panel-open');
                 adminPanelContent.classList.add('admin-panel-close');
                 
-                adminPanelContent.addEventListener('animationend', () => {
+                setTimeout(() => {
                     adminPanelModal.classList.add('hidden');
-                    adminPanelContent.classList.remove('admin-panel-close'); // Klasse für nächstes Öffnen bereinigen
                     
-                    // Auf Standard-Tab für nächstes Öffnen zurücksetzen
+                    // Reset classes for next time
+                    adminPanelContent.classList.remove('admin-panel-open', 'admin-panel-close');
+                    
+                    // Reset tabs to default state
                     adminTabs.forEach(t => t.classList.remove('active'));
                     document.querySelector('.admin-tab[data-tab="dashboard"]').classList.add('active');
                     adminTabContents.forEach(c => c.classList.add('hidden'));
                     document.getElementById('admin-dashboard-tab').classList.remove('hidden');
 
-                 }, { once: true });
-
-                 document.body.classList.remove('no-scroll');
-                 if (visitsListener) { visitsListener(); visitsListener = null; }
-                 if (usersListener) { usersListener(); usersListener = null; }
-                 if (analyticsListener) { analyticsListener(); analyticsListener = null; }
+                    document.body.classList.remove('no-scroll');
+                    if (visitsListener) { visitsListener(); visitsListener = null; }
+                    if (usersListener) { usersListener(); usersListener = null; }
+                    if (analyticsListener) { analyticsListener(); analyticsListener = null; }
+                }, 400); // Match animation duration
             });
             
             function renderCountryChart() {
@@ -2173,5 +2181,6 @@
     </script>
 </body>
 </html>
+
 
 
