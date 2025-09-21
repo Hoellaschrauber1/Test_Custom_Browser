@@ -346,29 +346,14 @@
         
         /* Admin Panel Animationen */
         .admin-panel-content-container {
-            perspective: 2000px;
             position: relative;
-            overflow: hidden;
         }
-        .admin-tab-content {
-            backface-visibility: hidden;
-            transform-style: preserve-3d;
+        .admin-tab-content.active-tab {
+            animation: admin-fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .tab-enter-active {
-            animation: slideAndRotateIn 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-        }
-        .tab-exit-active {
-            animation: slideAndRotateOut 0.5s cubic-bezier(0.6, -0.28, 0.73, 0.04) forwards;
-            position: absolute;
-            top: 0; left: 0; right: 0;
-        }
-        @keyframes slideAndRotateIn {
-            from { opacity: 0; transform: translateX(50%) rotateY(-90deg); }
-            to { opacity: 1; transform: translateX(0) rotateY(0deg); }
-        }
-        @keyframes slideAndRotateOut {
-            from { opacity: 1; transform: translateX(0) rotateY(0deg); }
-            to { opacity: 0; transform: translateX(-50%) rotateY(90deg); }
+        @keyframes admin-fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .search-item-fall-in {
@@ -1719,31 +1704,27 @@
                     const activeTab = document.querySelector('.admin-tab.active');
                     if (activeTab === tab) return;
 
-                    const activeContent = document.querySelector('.admin-tab-content:not(.hidden)');
-                    if (activeContent) {
-                        activeContent.classList.add('tab-exit-active');
-                        activeContent.addEventListener('animationend', () => {
-                            activeContent.classList.add('hidden');
-                            activeContent.classList.remove('tab-exit-active');
-                        }, { once: true });
-                    }
-                    
+                    // Update active button
                     adminTabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
+
+                    // Switch content visiblity and apply animation
+                    adminTabContents.forEach(content => {
+                        content.classList.add('hidden');
+                        content.classList.remove('active-tab');
+                    });
+                    
                     const tabName = tab.dataset.tab;
                     const newContent = document.getElementById(`admin-${tabName}-tab`);
                     
-                    setTimeout(() => {
-                        newContent.classList.remove('hidden');
-                        newContent.classList.add('tab-enter-active');
-                        newContent.addEventListener('animationend', () => {
-                            newContent.classList.remove('tab-enter-active');
-                        }, { once: true });
+                    newContent.classList.remove('hidden');
+                    newContent.classList.add('active-tab');
+                    newContent.addEventListener('animationend', () => {
+                        newContent.classList.remove('active-tab');
+                    }, { once: true });
 
-                        if (tabName === 'dashboard') reanimateDashboardCharts();
-                        else if (tabName === 'analytics') reanimateAnalyticsCharts();
-
-                    }, 150);
+                    if (tabName === 'dashboard') reanimateDashboardCharts();
+                    else if (tabName === 'analytics') reanimateAnalyticsCharts();
                 });
             });
 
@@ -2080,4 +2061,5 @@
     </script>
 </body>
 </html>
+
 
