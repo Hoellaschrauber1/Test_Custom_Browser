@@ -1468,11 +1468,11 @@
                  registerError.textContent = '';
 
                 try {
-                    // ROBUSTERE ÜBERPRÜFUNG: Prüft direkt in der Benutzer-Collection, ob bereits ein Founder existiert.
-                    const usersRef = collection(db, "users");
-                    const q = query(usersRef, where("role", "==", "founder"), limit(1));
-                    const founderSnapshot = await getDocs(q);
-                    const isFirstUser = founderSnapshot.empty;
+                    // KORREKTUR: Wir prüfen wieder die 'metadata', da diese von jedem gelesen werden darf.
+                    // Das Durchsuchen der 'users'-Collection ist für neue Benutzer nicht erlaubt.
+                    const metadataRef = doc(db, "metadata", "admin");
+                    const metadataSnap = await getDoc(metadataRef);
+                    const isFirstUser = !metadataSnap.exists() || !metadataSnap.data().founderUID;
 
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     const user = userCredential.user;
@@ -1488,8 +1488,6 @@
                     });
 
                     if (isFirstUser) {
-                        // Die founderUID wird weiterhin in metadata gespeichert, damit die Sicherheitsregeln funktionieren.
-                        const metadataRef = doc(db, "metadata", "admin");
                         await setDoc(metadataRef, { founderUID: user.uid }, { merge: true });
                     }
 
@@ -1950,4 +1948,5 @@
     </script>
 </body>
 </html>
+
 
