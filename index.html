@@ -925,6 +925,7 @@
             let visitsListener = null; 
             let usersListener = null;
             let analyticsListener = null;
+            let verificationTimer = null;
             
             const colorPalette = ['#007aff', '#ff9500', '#34c759', '#af52de', '#5856d6', '#ff2d55', '#ffcc00', '#5ac8fa', '#ff3b30', '#4cd964'];
             
@@ -1532,6 +1533,10 @@
             };
 
             const closeAuthModalHandler = () => {
+                if (verificationTimer) {
+                    clearInterval(verificationTimer);
+                    verificationTimer = null;
+                }
                 playCloseSound();
                 authModal.classList.add('opacity-0');
                 setTimeout(() => {
@@ -1559,6 +1564,10 @@
             });
             
             backToLoginBtn.addEventListener('click', () => {
+                if (verificationTimer) {
+                    clearInterval(verificationTimer);
+                    verificationTimer = null;
+                }
                 playClickSound();
                 registerView.classList.add('hidden');
                 loginView.classList.remove('hidden');
@@ -1594,6 +1603,18 @@
                 registerView.classList.add('hidden');
                 verifyEmailView.classList.remove('hidden');
                 verificationEmailAddress.textContent = email;
+
+                if (verificationTimer) clearInterval(verificationTimer);
+                verificationTimer = setInterval(async () => {
+                    if (auth.currentUser) {
+                        await auth.currentUser.reload();
+                        if (auth.currentUser.emailVerified) {
+                            clearInterval(verificationTimer);
+                            verificationTimer = null;
+                            closeAuthModalHandler();
+                        }
+                    }
+                }, 3000); // Check every 3 seconds
             };
             
             resendVerificationBtn.addEventListener('click', async () => {
